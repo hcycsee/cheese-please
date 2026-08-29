@@ -6,8 +6,29 @@ import { getSocket } from "@/lib/socketClient";
 
 type FriendRow = {
   friendshipId: string;
-  user: { id: string; name: string; preferredName: string | null; gender: string | null; faculty: string | null; mbti: string | null; online: boolean };
+  user: {
+    id: string;
+    name: string;
+    preferredName: string | null;
+    gender: string | null;
+    ageRange: string | null;
+    faculty: string | null;
+    mbti: string | null;
+    online: boolean;
+  };
 };
+
+function ProfileChips({ user }: { user: FriendRow["user"] }) {
+  if (!user.gender && !user.ageRange && !user.faculty && !user.mbti) return null;
+  return (
+    <div className="mt-1 flex flex-wrap gap-1">
+      {user.gender && <span className="chip">{user.gender}</span>}
+      {user.ageRange && <span className="chip">{user.ageRange}</span>}
+      {user.faculty && <span className="chip">{user.faculty}</span>}
+      {user.mbti && <span className="chip">{user.mbti}</span>}
+    </div>
+  );
+}
 
 export default function FriendsPanel() {
   const [friends, setFriends] = useState<FriendRow[]>([]);
@@ -57,7 +78,10 @@ export default function FriendsPanel() {
           <div className="flex flex-col gap-2">
             {incoming.map((row) => (
               <div key={row.friendshipId} className="card flex items-center justify-between">
-                <p className="font-medium">{displayName(row.user)}</p>
+                <div>
+                  <p className="font-medium">{displayName(row.user)}</p>
+                  <ProfileChips user={row.user} />
+                </div>
                 <div className="flex gap-2">
                   <button className="btn-primary text-sm" onClick={() => respond(row.friendshipId, "accept")}>
                     Accept
@@ -84,7 +108,10 @@ export default function FriendsPanel() {
               <div key={row.friendshipId} className="card flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className={`h-2.5 w-2.5 rounded-full ${row.user.online ? "bg-green-500" : "bg-stone-300"}`} />
-                  <p className="font-medium">{displayName(row.user)}</p>
+                  <div>
+                    <p className="font-medium">{displayName(row.user)}</p>
+                    <ProfileChips user={row.user} />
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <a href={`/chat/${row.user.id}`} className="btn-primary text-sm">
@@ -106,7 +133,10 @@ export default function FriendsPanel() {
           <div className="flex flex-col gap-2">
             {outgoing.map((row) => (
               <div key={row.friendshipId} className="card flex items-center justify-between">
-                <p className="font-medium">{displayName(row.user)}</p>
+                <div>
+                  <p className="font-medium">{displayName(row.user)}</p>
+                  <ProfileChips user={row.user} />
+                </div>
                 <button className="btn-ghost text-sm" onClick={() => respond(row.friendshipId, "remove")}>
                   Cancel
                 </button>

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import AppShell, { requireOnboardedUser } from "@/components/AppShell";
 import OnlineDirectory, { type DirectoryUser } from "@/components/OnlineDirectory";
+import { ageRangeLabel } from "@/lib/format";
 
 export default async function DashboardPage() {
   const user = await requireOnboardedUser();
@@ -13,6 +14,7 @@ export default async function DashboardPage() {
         name: true,
         preferredName: true,
         gender: true,
+        age: true,
         faculty: true,
         mbti: true,
         ownedGames: true,
@@ -34,8 +36,9 @@ export default async function DashboardPage() {
     statusByUserId.set(otherId, { status, friendshipId: f.id });
   }
 
-  const directoryUsers: DirectoryUser[] = others.map((u) => ({
+  const directoryUsers: DirectoryUser[] = others.map(({ age, ...u }) => ({
     ...u,
+    ageRange: ageRangeLabel(age),
     friendStatus: statusByUserId.get(u.id)?.status ?? "none",
     friendshipId: statusByUserId.get(u.id)?.friendshipId,
   }));

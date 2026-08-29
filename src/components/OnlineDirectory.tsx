@@ -10,6 +10,7 @@ export type DirectoryUser = {
   name: string;
   preferredName: string | null;
   gender: string | null;
+  ageRange: string | null;
   faculty: string | null;
   mbti: string | null;
   ownedGames: string | null;
@@ -125,6 +126,7 @@ function UserCard({
           </div>
           <div className="mt-1 flex flex-wrap gap-1">
             {user.gender && <span className="chip">{user.gender}</span>}
+            {user.ageRange && <span className="chip">{user.ageRange}</span>}
             {user.faculty && <span className="chip">{user.faculty}</span>}
             {user.mbti && <span className="chip">{user.mbti}</span>}
           </div>

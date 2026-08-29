@@ -77,7 +77,8 @@ export default function GarticGame({
       {session.status === "active" && (
         <div className="flex flex-col gap-3">
           <p className="text-xs text-stone-600">
-            Round {session.round + 1}/{session.totalRounds} — {session.submitted.length}/{session.playerOrder.length} submitted
+            {session.round === 0 ? "Starting phrases" : `Round ${session.round}/${session.totalRounds - 1}`} —{" "}
+            {session.submitted.length}/{session.playerOrder.length} submitted
           </p>
 
           {!iJoined && <p className="text-xs text-amber-600">You joined after this round started — wait for the next game.</p>}

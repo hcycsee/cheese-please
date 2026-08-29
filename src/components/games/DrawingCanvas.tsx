@@ -7,8 +7,14 @@ export default function DrawingCanvas({ onSubmit }: { onSubmit: (dataUrl: string
   const drawingRef = useRef(false);
 
   function getPos(e: React.PointerEvent<HTMLCanvasElement>) {
-    const rect = e.currentTarget.getBoundingClientRect();
-    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    const canvas = e.currentTarget;
+    const rect = canvas.getBoundingClientRect();
+    // The canvas's rendered CSS size can differ from its drawing-buffer size
+    // (width/height attributes) — e.g. a flex parent stretching it — so map
+    // through that ratio rather than assuming 1 CSS px == 1 canvas px.
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
   }
 
   function handlePointerDown(e: React.PointerEvent<HTMLCanvasElement>) {
@@ -66,7 +72,7 @@ export default function DrawingCanvas({ onSubmit }: { onSubmit: (dataUrl: string
         ref={canvasRef}
         width={360}
         height={240}
-        className="touch-none rounded-lg border border-stone-300 bg-white"
+        className="w-[360px] max-w-full touch-none self-start rounded-lg border border-stone-300 bg-white"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
