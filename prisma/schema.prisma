@@ -14,6 +14,7 @@ model User {
   name         String
   preferredName String?
   institution  String?
+  avatarUrl    String? // data: URL of a small square profile picture
   createdAt    DateTime @default(now())
   lastSeenAt   DateTime @default(now())
 
@@ -32,6 +33,14 @@ model User {
   ageFactor      Boolean @default(true)
   facultyFactor  Boolean @default(true)
   mbtiFactor     Boolean @default(true)
+
+  // whether each profile chip is shown to OTHER users viewing this profile —
+  // purely a display preference. Hidden chips are still used for group
+  // matching, which reads the underlying fields directly regardless of these.
+  showGender  Boolean @default(true)
+  showAge     Boolean @default(true)
+  showFaculty Boolean @default(true)
+  showMbti    Boolean @default(true)
 
   // games
   ownedGames String? // JSON string[] of manually-added game names

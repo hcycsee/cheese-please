@@ -4,6 +4,7 @@ import { useState } from "react";
 import { FACULTIES, GENDERS, parseJsonArray } from "@/lib/constants";
 import AvailabilityGrid from "./AvailabilityGrid";
 import MbtiPicker from "./MbtiPicker";
+import AvatarUploader from "./AvatarUploader";
 
 type SteamGame = { appid: number; name: string; playtimeMinutes: number; iconUrl: string | null };
 
@@ -20,12 +21,19 @@ export type ProfileData = {
   steamProfileUrl: string | null;
   steamGames: string | null;
   steamSyncedAt: string | null;
+  avatarUrl: string | null;
+  showGender: boolean;
+  showAge: boolean;
+  showFaculty: boolean;
+  showMbti: boolean;
 };
 
 export default function ProfileEditor({ initial }: { initial: ProfileData }) {
   return (
     <div className="flex flex-col gap-6">
+      <AvatarUploader initialUrl={initial.avatarUrl} />
       <BasicInfoCard initial={initial} />
+      <VisibilityCard initial={initial} />
       <AvailabilityCard initialSlots={parseJsonArray(initial.availability)} />
       <GamesCard initialGames={parseJsonArray(initial.ownedGames)} />
       <SteamCard initial={initial} />
@@ -123,6 +131,54 @@ function BasicInfoCard({ initial }: { initial: ProfileData }) {
         <SavedBadge saved={saved} />
       </div>
     </form>
+  );
+}
+
+type VisibilityKey = "showGender" | "showAge" | "showFaculty" | "showMbti";
+
+function VisibilityCard({ initial }: { initial: ProfileData }) {
+  const [prefs, setPrefs] = useState({
+    showGender: initial.showGender,
+    showAge: initial.showAge,
+    showFaculty: initial.showFaculty,
+    showMbti: initial.showMbti,
+  });
+
+  async function update(key: VisibilityKey, value: boolean) {
+    const next = { ...prefs, [key]: value };
+    setPrefs(next);
+    await fetch("/api/profile/visibility", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ [key]: value }),
+    });
+  }
+
+  return (
+    <div className="card flex flex-col gap-4">
+      <div>
+        <h2 className="font-semibold">Chip visibility</h2>
+        <p className="text-sm text-stone-600">
+          Choose which chips other people can see on your profile. Hidden chips are still used for group
+          matching — they just won&apos;t be shown.
+        </p>
+      </div>
+      <div className="flex flex-col gap-2">
+        <VisibilityRow label="Gender" checked={prefs.showGender} onChange={(v) => update("showGender", v)} />
+        <VisibilityRow label="Age range" checked={prefs.showAge} onChange={(v) => update("showAge", v)} />
+        <VisibilityRow label="Faculty" checked={prefs.showFaculty} onChange={(v) => update("showFaculty", v)} />
+        <VisibilityRow label="MBTI" checked={prefs.showMbti} onChange={(v) => update("showMbti", v)} />
+      </div>
+    </div>
+  );
+}
+
+function VisibilityRow({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label className="flex cursor-pointer items-center justify-between rounded-xl border border-stone-200 px-3 py-2">
+      <span className="text-sm">{label}</span>
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="h-4 w-4" />
+    </label>
   );
 }
 

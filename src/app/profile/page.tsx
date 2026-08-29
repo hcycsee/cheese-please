@@ -21,6 +21,11 @@ export default async function ProfilePage() {
           steamProfileUrl: user.steamProfileUrl,
           steamGames: user.steamGames,
           steamSyncedAt: user.steamSyncedAt ? user.steamSyncedAt.toISOString() : null,
+          avatarUrl: user.avatarUrl,
+          showGender: user.showGender,
+          showAge: user.showAge,
+          showFaculty: user.showFaculty,
+          showMbti: user.showMbti,
         }}
       />
     </AppShell>

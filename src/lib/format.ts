@@ -19,3 +19,24 @@ export function ageRangeLabel(age: number | null | undefined): string | null {
   }
   return `${bands[bands.length - 1]}+`;
 }
+
+/** Applies a user's own chip-visibility preferences before their profile is
+ *  sent to someone else — hidden chips are still used for group matching
+ *  (that reads the raw fields directly), just not exposed here. */
+export function visibleChips(user: {
+  gender: string | null;
+  age: number | null;
+  faculty: string | null;
+  mbti: string | null;
+  showGender: boolean;
+  showAge: boolean;
+  showFaculty: boolean;
+  showMbti: boolean;
+}): { gender: string | null; ageRange: string | null; faculty: string | null; mbti: string | null } {
+  return {
+    gender: user.showGender ? user.gender : null,
+    ageRange: user.showAge ? ageRangeLabel(user.age) : null,
+    faculty: user.showFaculty ? user.faculty : null,
+    mbti: user.showMbti ? user.mbti : null,
+  };
+}
