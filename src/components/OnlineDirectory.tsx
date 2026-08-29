@@ -118,7 +118,7 @@ function UserCard({
 }) {
   const games = gameNames(user);
   return (
-    <div className={`card ${online ? "" : "opacity-60"}`}>
+    <div className={`card flex h-full flex-col ${online ? "" : "opacity-60"}`}>
       <div className="flex items-start gap-3">
         <div className="relative shrink-0">
           <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-stone-200 bg-stone-100">
@@ -153,7 +153,7 @@ function UserCard({
         </p>
       )}
 
-      <div className="mt-3">
+      <div className="mt-auto pt-3">
         {user.friendStatus === "none" && (
           <button className="btn-secondary w-full text-sm" onClick={() => onAddFriend(user.id)}>
             Add friend
