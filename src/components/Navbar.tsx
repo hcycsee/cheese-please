@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { displayName } from "@/lib/format";
 
-const LINKS = [
+const BASE_LINKS = [
   { href: "/dashboard", label: "Online now" },
   { href: "/friends", label: "Friends" },
   { href: "/match", label: "Find a group" },
@@ -14,10 +14,11 @@ const LINKS = [
 export default function Navbar({
   user,
 }: {
-  user: { name: string; preferredName?: string | null; avatarUrl?: string | null };
+  user: { name: string; preferredName?: string | null; avatarUrl?: string | null; isAdmin?: boolean };
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const LINKS = user.isAdmin ? [...BASE_LINKS, { href: "/admin", label: "Admin" }] : BASE_LINKS;
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });

@@ -16,6 +16,7 @@ model User {
   institution  String?
   avatarUrl    String? // data: URL of a small square profile picture
   bio          String? // free-text "about me", always visible to other users
+  isAdmin      Boolean  @default(false)
   createdAt    DateTime @default(now())
   lastSeenAt   DateTime @default(now())
 

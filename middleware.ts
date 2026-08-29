@@ -4,7 +4,7 @@ import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
 // /register is intentionally excluded: step 1 of the wizard runs before the
 // visitor has an account/session at all. Later steps check auth themselves
 // via their API routes and bounce the client back to step 1 if unauthenticated.
-const PROTECTED_PREFIXES = ["/dashboard", "/friends", "/chat", "/match", "/profile"];
+const PROTECTED_PREFIXES = ["/dashboard", "/friends", "/chat", "/match", "/profile", "/admin"];
 const AUTH_ONLY_PREFIXES = ["/login"]; // redirect away if already logged in
 
 export async function middleware(req: NextRequest) {
@@ -33,5 +33,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/friends/:path*", "/chat/:path*", "/match/:path*", "/profile/:path*", "/login"],
+  matcher: ["/dashboard/:path*", "/friends/:path*", "/chat/:path*", "/match/:path*", "/profile/:path*", "/admin/:path*", "/login"],
 };
