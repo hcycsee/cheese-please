@@ -8,7 +8,10 @@ import { SESSION_COOKIE, verifySessionToken } from "./src/lib/auth";
 import { markSocketOnline, markSocketOffline, listOnlineUserIds } from "./src/lib/presence";
 import { setIo } from "./src/lib/socketServer";
 import { displayName } from "./src/lib/format";
-import { gameRoomKey, getSession, createLobby, joinLobby, beginRound, clickTile, type GameMode } from "./src/lib/game";
+import { gameRoomKey, getSession as getBaseSession, type GameMode, type GameType, type BaseSession } from "./src/lib/games/shared";
+import * as TileRush from "./src/lib/games/tileRush";
+import * as TicTacToe from "./src/lib/games/tictactoe";
+import * as Gartic from "./src/lib/games/gartic";
 
 const dev = process.env.NODE_ENV !== "production";
 const port = Number(process.env.PORT) || 3000;
@@ -47,6 +50,35 @@ app.prepare().then(() => {
     cors: { origin: false },
   });
   setIo(io);
+
+  function toPublicSession(s: BaseSession | null): BaseSession | null {
+    if (s && s.type === "gartic") return Gartic.publicView(s as Gartic.GarticSession);
+    return s;
+  }
+
+  function broadcastState(rooms: string[], key: string, session: BaseSession | null) {
+    io.to(rooms).emit("game:state", { key, session: toPublicSession(session) });
+  }
+
+  function pushGarticTurns(session: Gartic.GarticSession) {
+    if (session.status !== "active") return;
+    for (const uid of session.playerOrder) {
+      const turn = Gartic.myTurn(session, uid);
+      if (turn) {
+        io.to(`user:${uid}`).emit("game:garticTurn", {
+          key: session.key,
+          round: session.round,
+          totalRounds: session.totalRounds,
+          ...turn,
+        });
+      }
+    }
+  }
+
+  function notifyGartic(rooms: string[], session: Gartic.GarticSession) {
+    broadcastState(rooms, session.key, session);
+    pushGarticTurns(session);
+  }
 
   io.use(async (socket, next_) => {
     try {
@@ -137,13 +169,30 @@ app.prepare().then(() => {
       const { mode, targetId } = payload ?? {};
       if (!mode || !targetId) return;
       const key = gameRoomKey(userId, mode, targetId);
-      socket.emit("game:state", { key, session: getSession(key) });
+      const session = getBaseSession(key);
+      socket.emit("game:state", { key, session: toPublicSession(session) });
+      if (session && session.type === "gartic" && session.status === "active") {
+        const garticSession = session as Gartic.GarticSession;
+        const turn = Gartic.myTurn(garticSession, userId);
+        if (turn) {
+          socket.emit("game:garticTurn", {
+            key,
+            round: garticSession.round,
+            totalRounds: garticSession.totalRounds,
+            ...turn,
+          });
+        }
+      }
     });
 
-    socket.on("game:start", async (payload: { mode?: GameMode; targetId?: string }) => {
+    socket.on("game:start", async (payload: { mode?: GameMode; targetId?: string; type?: GameType }) => {
       try {
-        const { mode, targetId } = payload ?? {};
-        if (!mode || !targetId) return;
+        const { mode, targetId, type } = payload ?? {};
+        if (!mode || !targetId || !type) return;
+        if (type === "gartic" && mode !== "group") {
+          socket.emit("game:error", { message: "Gartic Phone is only available in group chats." });
+          return;
+        }
         if (!(await canPlayIn(userId, mode, targetId))) {
           socket.emit("game:error", { message: "You can't start a game here." });
           return;
@@ -151,15 +200,23 @@ app.prepare().then(() => {
 
         const key = gameRoomKey(userId, mode, targetId);
         const rooms = gameRooms(userId, mode, targetId);
-        const existing = getSession(key);
+        const existing = getBaseSession(key);
         if (existing && existing.status !== "ended") {
-          io.to(rooms).emit("game:state", { key, session: existing });
+          broadcastState(rooms, key, existing);
           return;
         }
 
         const user = await prisma.user.findUnique({ where: { id: userId }, select: { name: true, preferredName: true } });
-        const session = createLobby(key, mode, targetId, userId, user ? displayName(user) : "Someone");
-        io.to(rooms).emit("game:state", { key, session });
+        const name = user ? displayName(user) : "Someone";
+
+        const session: BaseSession =
+          type === "tilerush"
+            ? TileRush.createLobby(key, mode, targetId, userId, name)
+            : type === "tictactoe"
+              ? TicTacToe.createLobby(key, mode, targetId, userId, name)
+              : Gartic.createLobby(key, targetId, userId, name);
+
+        broadcastState(rooms, key, session);
       } catch {
         socket.emit("game:error", { message: "Failed to start a game." });
       }
@@ -173,9 +230,21 @@ app.prepare().then(() => {
 
         const key = gameRoomKey(userId, mode, targetId);
         const rooms = gameRooms(userId, mode, targetId);
+        const existing = getBaseSession(key);
+        if (!existing) return;
+
         const user = await prisma.user.findUnique({ where: { id: userId }, select: { name: true, preferredName: true } });
-        const session = joinLobby(key, userId, user ? displayName(user) : "Someone");
-        if (session) io.to(rooms).emit("game:state", { key, session });
+        const name = user ? displayName(user) : "Someone";
+
+        const session: BaseSession | null =
+          existing.type === "tilerush"
+            ? TileRush.joinLobby(key, userId, name)
+            : existing.type === "tictactoe"
+              ? TicTacToe.joinLobby(key, userId, name)
+              : Gartic.joinLobby(key, userId, name);
+
+        if (session) broadcastState(rooms, key, session);
+        else socket.emit("game:error", { message: "Couldn't join — the game may be full or already started." });
       } catch {
         socket.emit("game:error", { message: "Failed to join the game." });
       }
@@ -185,14 +254,24 @@ app.prepare().then(() => {
       const { mode, targetId } = payload ?? {};
       if (!mode || !targetId) return;
       const key = gameRoomKey(userId, mode, targetId);
-      const session = getSession(key);
-      if (!session || !session.players[userId]) return;
-
+      const existing = getBaseSession(key);
+      if (!existing || !existing.players[userId]) return;
       const rooms = gameRooms(userId, mode, targetId);
-      const started = beginRound(key, (endedSession) => {
-        io.to(rooms).emit("game:state", { key, session: endedSession });
-      });
-      if (started) io.to(rooms).emit("game:state", { key, session: started });
+
+      if (existing.type === "tilerush") {
+        const started = TileRush.beginRound(key, (ended) => broadcastState(rooms, key, ended));
+        if (started) broadcastState(rooms, key, started);
+      } else if (existing.type === "tictactoe") {
+        const started = TicTacToe.beginRound(key);
+        if (started) broadcastState(rooms, key, started);
+        else socket.emit("game:error", { message: "Need a second player to start." });
+      } else {
+        const started = Gartic.beginRound(key, (s) => notifyGartic(rooms, s));
+        if (!started) {
+          socket.emit("game:error", { message: `Need at least ${Gartic.MIN_PLAYERS} players to start.` });
+        }
+        // on success, Gartic.beginRound already broadcasts + pushes turns via notifyGartic
+      }
     });
 
     socket.on("game:tile", (payload: { mode?: GameMode; targetId?: string; index?: number }) => {
@@ -200,10 +279,25 @@ app.prepare().then(() => {
       if (!mode || !targetId || typeof index !== "number") return;
       const key = gameRoomKey(userId, mode, targetId);
       const rooms = gameRooms(userId, mode, targetId);
-      const session = clickTile(key, userId, index, (endedSession) => {
-        io.to(rooms).emit("game:state", { key, session: endedSession });
-      });
-      if (session) io.to(rooms).emit("game:state", { key, session });
+      const session = TileRush.clickTile(key, userId, index, (ended) => broadcastState(rooms, key, ended));
+      if (session) broadcastState(rooms, key, session);
+    });
+
+    socket.on("game:move", (payload: { mode?: GameMode; targetId?: string; index?: number }) => {
+      const { mode, targetId, index } = payload ?? {};
+      if (!mode || !targetId || typeof index !== "number") return;
+      const key = gameRoomKey(userId, mode, targetId);
+      const rooms = gameRooms(userId, mode, targetId);
+      const session = TicTacToe.makeMove(key, userId, index);
+      if (session) broadcastState(rooms, key, session);
+    });
+
+    socket.on("game:garticSubmit", (payload: { mode?: GameMode; targetId?: string; content?: string }) => {
+      const { mode, targetId, content } = payload ?? {};
+      if (mode !== "group" || !targetId || typeof content !== "string") return;
+      const key = gameRoomKey(userId, mode, targetId);
+      const rooms = gameRooms(userId, mode, targetId);
+      Gartic.submitTurn(key, userId, content, (s) => notifyGartic(rooms, s));
     });
 
     socket.on("disconnect", async () => {
