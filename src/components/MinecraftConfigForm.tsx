@@ -59,10 +59,10 @@ export default function MinecraftConfigForm() {
           onClick={toggle}
           disabled={loading || !loaded}
           aria-pressed={online}
-          className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${online ? "bg-brand-600" : "bg-stone-300"}`}
+          className={`inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${online ? "bg-brand-600" : "bg-stone-300"}`}
         >
           <span
-            className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-transform ${
+            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
               online ? "translate-x-6" : "translate-x-1"
             }`}
           />
