@@ -5,7 +5,7 @@ import { parse as parseCookie } from "cookie";
 
 import { prisma } from "./src/lib/db";
 import { SESSION_COOKIE, verifySessionToken } from "./src/lib/auth";
-import { markSocketOnline, markSocketOffline, listOnlineUserIds, isOnline } from "./src/lib/presence";
+import { markSocketOnline, markSocketOffline, listOnlineUserIds } from "./src/lib/presence";
 import { setIo } from "./src/lib/socketServer";
 import { displayName } from "./src/lib/format";
 import { gameRoomKey, getSession as getBaseSession, type GameMode, type GameType, type BaseSession } from "./src/lib/games/shared";
@@ -21,6 +21,15 @@ const app = next({ dev });
 const handle = app.getRequestHandler();
 
 const MAX_MESSAGE_LENGTH = 2000;
+const MAX_IMAGE_DATA_URL_LENGTH = 7_000_000; // ~5MB decoded
+
+function normalizeImageUrl(imageUrl: unknown): string | null | undefined {
+  if (imageUrl === undefined) return undefined;
+  if (typeof imageUrl !== "string") return null;
+  if (!/^data:image\/(png|jpeg|jpg|gif|webp);base64,/.test(imageUrl)) return null;
+  if (imageUrl.length > MAX_IMAGE_DATA_URL_LENGTH) return null;
+  return imageUrl;
+}
 
 function gameRooms(userId: string, mode: GameMode, targetId: string): string[] {
   return mode === "group" ? [`group:${targetId}`] : [`user:${userId}`, `user:${targetId}`];
@@ -45,41 +54,8 @@ async function canPlayIn(userId: string, mode: GameMode, targetId: string): Prom
   return !!friendship;
 }
 
-// Handled at the raw HTTP layer (not as a Next.js route) so we can read the
-// real TCP remote address for the IP allowlist check. Next's route handlers
-// only see the `Request`/`NextRequest` abstraction, whose "IP" is derived
-// from an x-forwarded-for header — trivially spoofable by the client and
-// simply absent unless there's a reverse proxy in front, neither of which we
-// can rely on for something calling this directly from a Minecraft server.
-async function handleMinecraftStatus(req: import("node:http").IncomingMessage, res: import("node:http").ServerResponse): Promise<boolean> {
-  if (!req.url || !req.url.startsWith("/api/minecraft/status")) return false;
-
-  const remoteAddress = (req.socket.remoteAddress || "").replace(/^::ffff:/, "");
-  const respond = (status: number, body: unknown) => {
-    res.writeHead(status, { "Content-Type": "application/json" });
-    res.end(JSON.stringify(body));
-  };
-
-  try {
-    const config = await prisma.minecraftConfig.findUnique({ where: { id: "singleton" } });
-    if (!config || !config.allowedIp || config.allowedIp !== remoteAddress) {
-      respond(403, { error: "IP not authorized." });
-      return true;
-    }
-    const online = config.targetUserId ? isOnline(config.targetUserId) : false;
-    respond(200, { online });
-  } catch {
-    respond(500, { error: "Internal error." });
-  }
-  return true;
-}
-
 app.prepare().then(() => {
-  const httpServer = createServer((req, res) => {
-    handleMinecraftStatus(req, res).then((handled) => {
-      if (!handled) handle(req, res);
-    });
-  });
+  const httpServer = createServer((req, res) => handle(req, res));
   const io = new SocketIOServer(httpServer, {
     cors: { origin: false },
   });
@@ -145,11 +121,17 @@ app.prepare().then(() => {
     socket.emit("presence:list", listOnlineUserIds());
     socket.broadcast.emit("presence:online", { userId });
 
-    socket.on("chat:dm", async (payload: { toUserId?: string; content?: string }) => {
+    socket.on("chat:dm", async (payload: { toUserId?: string; content?: string; imageUrl?: string }) => {
       try {
         const toUserId = payload?.toUserId;
         const content = (payload?.content ?? "").trim().slice(0, MAX_MESSAGE_LENGTH);
-        if (!toUserId || !content) return;
+        const imageUrl = normalizeImageUrl(payload?.imageUrl);
+        if (!toUserId) return;
+        if (payload?.imageUrl !== undefined && imageUrl === null) {
+          socket.emit("chat:error", { message: "Image must be a PNG, JPEG, GIF, or WebP under 5MB." });
+          return;
+        }
+        if (!content && !imageUrl) return;
 
         const friendship = await prisma.friendship.findFirst({
           where: {
@@ -164,13 +146,13 @@ app.prepare().then(() => {
           socket.emit("chat:error", { message: "You can only message friends." });
           return;
         }
-        if (containsProfanity(content)) {
+        if (content && containsProfanity(content)) {
           socket.emit("chat:error", { message: "Please keep messages appropriate." });
           return;
         }
 
         const message = await prisma.message.create({
-          data: { senderId: userId, receiverId: toUserId, content },
+          data: { senderId: userId, receiverId: toUserId, content, imageUrl: imageUrl || null },
           include: { sender: { select: { id: true, name: true, preferredName: true } } },
         });
 
@@ -180,11 +162,17 @@ app.prepare().then(() => {
       }
     });
 
-    socket.on("chat:group", async (payload: { groupId?: string; content?: string }) => {
+    socket.on("chat:group", async (payload: { groupId?: string; content?: string; imageUrl?: string }) => {
       try {
         const groupId = payload?.groupId;
         const content = (payload?.content ?? "").trim().slice(0, MAX_MESSAGE_LENGTH);
-        if (!groupId || !content) return;
+        const imageUrl = normalizeImageUrl(payload?.imageUrl);
+        if (!groupId) return;
+        if (payload?.imageUrl !== undefined && imageUrl === null) {
+          socket.emit("chat:error", { message: "Image must be a PNG, JPEG, GIF, or WebP under 5MB." });
+          return;
+        }
+        if (!content && !imageUrl) return;
 
         const membership = await prisma.groupMember.findUnique({
           where: { userId_groupId: { userId, groupId } },
@@ -193,13 +181,13 @@ app.prepare().then(() => {
           socket.emit("chat:error", { message: "You're not in that group." });
           return;
         }
-        if (containsProfanity(content)) {
+        if (content && containsProfanity(content)) {
           socket.emit("chat:error", { message: "Please keep messages appropriate." });
           return;
         }
 
         const message = await prisma.message.create({
-          data: { senderId: userId, groupId, content },
+          data: { senderId: userId, groupId, content, imageUrl: imageUrl || null },
           include: { sender: { select: { id: true, name: true, preferredName: true } } },
         });
 

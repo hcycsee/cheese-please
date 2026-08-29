@@ -11,6 +11,7 @@ type IncomingMessage = {
   receiverId?: string | null;
   groupId?: string | null;
   content: string;
+  imageUrl?: string | null;
   sender?: { id: string; name: string; preferredName: string | null } | null;
 };
 
@@ -34,8 +35,9 @@ export default function NotificationToasts({ currentUserId }: { currentUserId: s
       if (pathname === href) return; // already looking at this conversation
 
       const senderName = message.sender ? displayName(message.sender) : "Someone";
+      const preview = message.content || (message.imageUrl ? "📷 Image" : "");
       const toastId = message.id;
-      setToasts((prev) => [...prev, { id: toastId, text: `${senderName}: ${message.content}`, href }]);
+      setToasts((prev) => [...prev, { id: toastId, text: `${senderName}: ${preview}`, href }]);
       setTimeout(() => {
         setToasts((prev) => prev.filter((t) => t.id !== toastId));
       }, TOAST_LIFETIME_MS);

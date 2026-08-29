@@ -1,79 +1,74 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-export default function MinecraftConfigForm({
-  initialAllowedIp,
-  initialTargetEmail,
-  initialTargetName,
-}: {
-  initialAllowedIp: string;
-  initialTargetEmail: string;
-  initialTargetName: string | null;
-}) {
-  const [allowedIp, setAllowedIp] = useState(initialAllowedIp);
-  const [targetEmail, setTargetEmail] = useState(initialTargetEmail);
-  const [targetName, setTargetName] = useState(initialTargetName);
-  const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
+export default function MinecraftConfigForm() {
+  const [online, setOnline] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  async function save(e: React.FormEvent) {
-    e.preventDefault();
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/admin/minecraft-config")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled) setOnline(!!data.online);
+      })
+      .catch(() => {
+        if (!cancelled) setError("Failed to load.");
+      })
+      .finally(() => {
+        if (!cancelled) setLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function toggle() {
+    const next = !online;
     setLoading(true);
     setError(null);
-    setSaved(false);
     try {
       const res = await fetch("/api/admin/minecraft-config", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ allowedIp, targetEmail }),
+        body: JSON.stringify({ online: next }),
       });
       const data = await res.json();
       if (!res.ok) {
         setError(data.error ?? "Failed to save.");
         return;
       }
-      setTargetName(data.targetUser?.name ?? null);
-      setSaved(true);
+      setOnline(data.online);
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <form className="card flex flex-col gap-4 max-w-lg" onSubmit={save}>
-      <div>
-        <label className="label">Server IP allowed to check status</label>
-        <input
-          className="input"
-          placeholder="e.g. 203.0.113.42"
-          value={allowedIp}
-          onChange={(e) => setAllowedIp(e.target.value)}
-        />
-        <p className="mt-1 text-xs text-stone-500">
-          Requests from any other IP get a 403 — the bridge script's real TCP source address is checked, not a
-          client-supplied value, so this can't be spoofed by changing a query parameter.
-        </p>
-      </div>
-      <div>
-        <label className="label">Account to relay online status for</label>
-        <input
-          className="input"
-          type="email"
-          placeholder="someone@example.com"
-          value={targetEmail}
-          onChange={(e) => setTargetEmail(e.target.value)}
-        />
-        {targetName && <p className="mt-1 text-xs text-stone-500">Currently: {targetName}</p>}
-      </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <div className="flex items-center gap-3">
-        <button className="btn-primary self-start" disabled={loading}>
-          {loading ? "Saving..." : "Save"}
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium">Minecraft demo status</p>
+          <p className="text-xs text-stone-500">Preview an in-game "online" indicator.</p>
+        </div>
+        <button
+          type="button"
+          onClick={toggle}
+          disabled={loading || !loaded}
+          aria-pressed={online}
+          className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${online ? "bg-brand-600" : "bg-stone-300"}`}
+        >
+          <span
+            className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-transform ${
+              online ? "translate-x-6" : "translate-x-1"
+            }`}
+          />
         </button>
-        {saved && <span className="text-xs text-green-700">Saved ✓</span>}
       </div>
-    </form>
+      {error && <p className="text-xs text-red-600">{error}</p>}
+    </div>
   );
 }

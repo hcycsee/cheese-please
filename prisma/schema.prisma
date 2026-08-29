@@ -60,7 +60,6 @@ model User {
   groupMemberships GroupMember[]
   blocksMade       Block[]       @relation("blocker")
   blocksReceived   Block[]       @relation("blocked")
-  minecraftConfigs MinecraftConfig[]
 }
 
 model Block {
@@ -94,6 +93,7 @@ model Message {
   receiverId String?
   groupId    String?
   content    String
+  imageUrl   String? // data: URL of an attached image/gif
   createdAt  DateTime @default(now())
 
   sender   User        @relation("sender", fields: [senderId], references: [id])
@@ -125,16 +125,10 @@ model GroupMember {
   @@unique([userId, groupId])
 }
 
-// Single admin-managed config for the Minecraft integration: which unipixel
-// account's online status the datapack/bridge should relay, and which server
-// IP is allowed to ask. Deliberately a singleton (fixed id) rather than a
-// multi-server mapping table — this integration is scoped to one Minecraft
-// server for now.
+// Single admin-managed toggle demonstrating the Minecraft integration concept:
+// just an on/off "online" flag the admin flips from the admin panel.
 model MinecraftConfig {
-  id           String   @id @default("singleton")
-  targetUserId String?
-  allowedIp    String?
-  updatedAt    DateTime @updatedAt
-
-  targetUser User? @relation(fields: [targetUserId], references: [id])
+  id        String   @id @default("singleton")
+  online    Boolean  @default(false)
+  updatedAt DateTime @updatedAt
 }

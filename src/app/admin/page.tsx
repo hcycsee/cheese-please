@@ -1,4 +1,3 @@
-import Link from "next/link";
 import AppShell, { requireAdmin } from "@/components/AppShell";
 import { prisma } from "@/lib/db";
 
@@ -33,10 +32,9 @@ export default async function AdminPage() {
         ))}
       </div>
 
-      <Link href="/admin/minecraft" className="card mt-6 block hover:bg-stone-100">
-        <p className="font-semibold">🟩 Minecraft integration</p>
-        <p className="text-sm text-stone-500">Configure which account's online status the datapack relays.</p>
-      </Link>
+      <p className="mt-6 text-xs text-stone-400">
+        The Minecraft demo status toggle now lives in each chat's "⋯" menu.
+      </p>
     </AppShell>
   );
 }
