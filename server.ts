@@ -5,7 +5,7 @@ import { parse as parseCookie } from "cookie";
 
 import { prisma } from "./src/lib/db";
 import { SESSION_COOKIE, verifySessionToken } from "./src/lib/auth";
-import { markSocketOnline, markSocketOffline, listOnlineUserIds } from "./src/lib/presence";
+import { markSocketOnline, markSocketOffline, listOnlineUserIds, isOnline } from "./src/lib/presence";
 import { setIo } from "./src/lib/socketServer";
 import { displayName } from "./src/lib/format";
 import { gameRoomKey, getSession as getBaseSession, type GameMode, type GameType, type BaseSession } from "./src/lib/games/shared";
@@ -45,8 +45,41 @@ async function canPlayIn(userId: string, mode: GameMode, targetId: string): Prom
   return !!friendship;
 }
 
+// Handled at the raw HTTP layer (not as a Next.js route) so we can read the
+// real TCP remote address for the IP allowlist check. Next's route handlers
+// only see the `Request`/`NextRequest` abstraction, whose "IP" is derived
+// from an x-forwarded-for header — trivially spoofable by the client and
+// simply absent unless there's a reverse proxy in front, neither of which we
+// can rely on for something calling this directly from a Minecraft server.
+async function handleMinecraftStatus(req: import("node:http").IncomingMessage, res: import("node:http").ServerResponse): Promise<boolean> {
+  if (!req.url || !req.url.startsWith("/api/minecraft/status")) return false;
+
+  const remoteAddress = (req.socket.remoteAddress || "").replace(/^::ffff:/, "");
+  const respond = (status: number, body: unknown) => {
+    res.writeHead(status, { "Content-Type": "application/json" });
+    res.end(JSON.stringify(body));
+  };
+
+  try {
+    const config = await prisma.minecraftConfig.findUnique({ where: { id: "singleton" } });
+    if (!config || !config.allowedIp || config.allowedIp !== remoteAddress) {
+      respond(403, { error: "IP not authorized." });
+      return true;
+    }
+    const online = config.targetUserId ? isOnline(config.targetUserId) : false;
+    respond(200, { online });
+  } catch {
+    respond(500, { error: "Internal error." });
+  }
+  return true;
+}
+
 app.prepare().then(() => {
-  const httpServer = createServer((req, res) => handle(req, res));
+  const httpServer = createServer((req, res) => {
+    handleMinecraftStatus(req, res).then((handled) => {
+      if (!handled) handle(req, res);
+    });
+  });
   const io = new SocketIOServer(httpServer, {
     cors: { origin: false },
   });
