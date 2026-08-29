@@ -26,7 +26,7 @@ export default function Navbar({
   }
 
   return (
-    <nav className="border-b border-stone-200 bg-white">
+    <nav className="border-b border-stone-200 bg-surface">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3">
         <div className="flex items-center gap-6">
           <Link href="/dashboard" className="flex items-center gap-2">

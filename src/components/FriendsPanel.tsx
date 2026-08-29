@@ -32,7 +32,7 @@ function Avatar({ user, showOnlineDot }: { user: FriendRow["user"]; showOnlineDo
       </div>
       {showOnlineDot && (
         <span
-          className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white ${
+          className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-surface ${
             user.online ? "bg-green-500" : "bg-stone-300"
           }`}
         />

@@ -131,7 +131,7 @@ export default function GarticGame({
         <div className="flex flex-col gap-4">
           <p className="text-sm font-semibold">🎉 Here&apos;s what happened:</p>
           {session.chains.map((chain, i) => (
-            <div key={i} className="rounded-lg border border-stone-200 bg-white p-3">
+            <div key={i} className="rounded-lg border border-stone-200 bg-surface p-3">
               <p className="mb-2 text-xs font-semibold text-stone-500">Chain {i + 1}</p>
               <div className="flex flex-col gap-2">
                 {chain.map((entry, j) => (

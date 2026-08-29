@@ -63,7 +63,7 @@ export default function TicTacToeGame({
             {session.board.map((cell, i) => (
               <button
                 key={i}
-                className="flex h-14 w-14 items-center justify-center rounded-lg border border-stone-200 bg-white text-2xl font-bold hover:bg-stone-100 disabled:opacity-60"
+                className="flex h-14 w-14 items-center justify-center rounded-lg border border-stone-200 bg-surface text-2xl font-bold hover:bg-stone-100 disabled:opacity-60"
                 onClick={() => move(i)}
                 disabled={!myMark || session.turn !== myMark || !!cell}
               >

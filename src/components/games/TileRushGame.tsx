@@ -82,7 +82,7 @@ export default function TileRushGame({
             {session.grid.map((emoji, i) => (
               <button
                 key={i}
-                className="flex h-12 items-center justify-center rounded-lg border border-stone-200 bg-white text-2xl hover:bg-stone-100 disabled:opacity-50"
+                className="flex h-12 items-center justify-center rounded-lg border border-stone-200 bg-surface text-2xl hover:bg-stone-100 disabled:opacity-50"
                 onClick={() => tile(i)}
                 disabled={!iJoined}
               >
