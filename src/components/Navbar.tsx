@@ -25,7 +25,8 @@ export default function Navbar({ user }: { user: { name: string; preferredName?:
     <nav className="border-b border-stone-200 bg-white">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3">
         <div className="flex items-center gap-6">
-          <Link href="/dashboard" className="flex items-center">
+          <Link href="/dashboard" className="flex items-center gap-2">
+            <img src="/mascot.png" alt="" className="h-8 w-8 object-contain" />
             <img src="/logo.png" alt="unipixel" className="h-8 w-auto rounded-md" />
           </Link>
           <div className="hidden gap-1 sm:flex">
