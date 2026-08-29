@@ -16,11 +16,15 @@ students, postgrads starting fresh, or honestly anyone who wants an easier way t
 
 ## What is your prototype?
 
-unipixel is a web app where you sign up with your uni, build a quick profile, and see who else is online right
-now. You can search and filter that list, add friends, chat one-on-one or in groups, and hit "Find a group" to
-get auto-matched with people who are free at the same time as you. Every chat also has built-in multiplayer
-minigames — a co-op tile-matcher, Tic-Tac-Toe, and a Gartic-Phone-style drawing game — so breaking the ice
-doesn't take any effort at all.
+unipixel is a web app where you sign up with your uni, build a quick profile (with a bio, an avatar, and
+control over which details others can see), and see who else is online right now. You can search and filter
+that list, add friends, block anyone you'd rather not deal with, chat one-on-one or in groups, and hit "Find a
+group" to get auto-matched with people who are free at the same time as you, into a group with a randomly
+generated name. Every chat also has built-in multiplayer minigames — a co-op tile-matcher, Tic-Tac-Toe, and a
+Gartic-Phone-style drawing game — so breaking the ice doesn't take any effort at all. A toast notification
+pops up whenever you get a message you're not already looking at. We even built a Minecraft integration: an
+admin-configured bridge that relays whether a specific unipixel account is online into a Minecraft server as
+an in-game status indicator.
 
 ## How does your prototype work?
 
@@ -28,11 +32,17 @@ After a short onboarding (with a mock ID check and a profile — gender, faculty
 you land on a live dashboard of everyone online. Add friends, chat instantly, or click "Find a group" and get
 dropped into a group chat with people who share your free time and whichever traits you tell it to weigh. Any
 chat window doubles as a game lobby — start a game, everyone in the conversation can jump in, and it plays out
-live for everyone at once.
+live for everyone at once. Behind an admin-only login, there's a config page where the one Minecraft server
+we're relaying status to gets set up: which account to track, and which server IP is allowed to ask — a small
+bridge script polls that from the Minecraft side and pushes it into the game over RCON, since a Minecraft
+datapack can't make web requests on its own.
 
 ## How did you implement your prototype?
 
 Next.js and TypeScript on the frontend, a custom Node server running Socket.IO for everything real-time
 (presence, chat, and all the in-game state), Prisma with SQLite for data, and JWT cookie-based auth. The
 matching feature is a small scoring algorithm we wrote ourselves, and the minigames are all built from scratch
-rather than pulled from a third-party service.
+rather than pulled from a third-party service. The Minecraft integration's status check is handled at the raw
+HTTP layer (not through Next.js's routing) specifically so it can check the real TCP source IP of the request
+rather than a spoofable header — the bridge script that talks to it lives alongside a genuine Minecraft
+datapack (function tags, scoreboard objectives, the works).
