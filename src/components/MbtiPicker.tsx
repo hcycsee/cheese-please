@@ -79,12 +79,18 @@ export default function MbtiPicker({
                   onClick={() => choose(d.key, opt.letter)}
                   aria-pressed={selected}
                   className={`rounded-xl border px-3 py-2 text-left text-sm transition-colors ${
+                    // bg-brand-* is a fixed palette (doesn't flip for dark mode like
+                    // stone-* does), so the selected state needs its own fixed text
+                    // colors too — otherwise dark mode's light body text lands on
+                    // this still-light background and becomes unreadable.
                     selected
-                      ? "border-brand-500 bg-brand-100 font-medium"
-                      : "border-stone-200 bg-stone-50 hover:bg-stone-100"
+                      ? "border-brand-500 bg-brand-100 font-medium text-brand-900"
+                      : "border-stone-200 bg-stone-50 text-stone-900 hover:bg-stone-100"
                   }`}
                 >
-                  <span className="mr-2 font-mono text-xs text-stone-400">{opt.letter}</span>
+                  <span className={`mr-2 font-mono text-xs ${selected ? "text-brand-600" : "text-stone-400"}`}>
+                    {opt.letter}
+                  </span>
                   {opt.label}
                 </button>
               );

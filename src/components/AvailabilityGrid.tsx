@@ -64,46 +64,50 @@ export default function AvailabilityGrid({
       )}
       {importState === "error" && <p className="mb-2 text-sm text-red-600">{importError}</p>}
 
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[560px] border-separate border-spacing-1 text-sm">
-          <thead>
-            <tr>
-              <th className="w-24"></th>
-              {DAYS.map((day) => (
-                <th key={day} className="pb-1 text-xs font-semibold text-stone-500">
-                  {day}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {PERIODS.map((period) => (
-              <tr key={period.key}>
-                <td className="pr-2 text-right text-xs text-stone-500">
-                  {period.label}
-                  <div className="text-[10px] text-stone-400">{period.hours}</div>
-                </td>
-                {DAYS.map((day) => {
-                  const slot = slotId(day, period.key);
-                  const isOn = selected.has(slot);
-                  return (
-                    <td key={slot}>
-                      <button
-                        type="button"
-                        onClick={() => toggle(slot)}
-                        aria-pressed={isOn}
-                        className={`h-9 w-full rounded-lg border transition-colors ${
-                          isOn ? "border-brand-500 bg-brand-400" : "border-stone-200 bg-stone-50 hover:bg-stone-100"
-                        }`}
-                      />
-                    </td>
-                  );
-                })}
-              </tr>
+      {/* table-fixed + an explicit width on only the label column makes the
+          browser split the remaining width evenly across the 7 day columns,
+          and aspect-square keeps every toggle a uniform square at whatever
+          size that works out to — so the whole week fits without horizontal
+          scrolling, in both the narrow onboarding wizard and the wider
+          profile page, with no cell ever a different size from the rest. */}
+      <table className="w-full table-fixed border-separate border-spacing-1 text-sm">
+        <thead>
+          <tr>
+            <th className="w-14 sm:w-20"></th>
+            {DAYS.map((day) => (
+              <th key={day} className="pb-1 text-xs font-semibold text-stone-500">
+                {day}
+              </th>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </tr>
+        </thead>
+        <tbody>
+          {PERIODS.map((period) => (
+            <tr key={period.key}>
+              <td className="pr-1 text-right text-[11px] leading-tight text-stone-500 sm:text-xs">
+                {period.label}
+                <div className="hidden text-[10px] text-stone-400 sm:block">{period.hours}</div>
+              </td>
+              {DAYS.map((day) => {
+                const slot = slotId(day, period.key);
+                const isOn = selected.has(slot);
+                return (
+                  <td key={slot}>
+                    <button
+                      type="button"
+                      onClick={() => toggle(slot)}
+                      aria-pressed={isOn}
+                      className={`aspect-square w-full rounded-lg border transition-colors ${
+                        isOn ? "border-brand-500 bg-brand-400" : "border-stone-200 bg-stone-50 hover:bg-stone-100"
+                      }`}
+                    />
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
