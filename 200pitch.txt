@@ -1,9 +1,1 @@
-You know that feeling in week one — sitting alone in J03 on the 9th floor, scrolling the same "how do I make friends at uni" thread on Reddit for the third time? That's the gap unipixel fills.
-
-It's a web app built for one campus at a time. You sign up with your uni email, build a profile in under a minute, and see who's actually online right now — filter by faculty, age, MBTI, whatever matters to you. Add people, chat instantly, or hit "Find a group" and get dropped into a chat with people who are free at the same time you are.
-
-Here's the part that gets people to put their phone down during the demo: every chat doubles as a game lobby. Tile Rush, Tic-Tac-Toe, a Gartic-Phone-style drawing game — real multiplayer, built from scratch, running inside the same window you're already chatting in. No downloads, no third-party bot bolted on.
-
-It's not a dating app, and it's not a study-buddy spreadsheet. It's the thing that gets two strangers from "we're in the same building" to "we're actually friends," without either of them having to make the first awkward move.
-
-Built at Syncs Hack 2026, by people who wanted this exact thing to exist.
+unipixel helps students at the same uni actually meet — see who's online now, chat, play real-time games built into the chat, or get matched into a group free at your same time.
