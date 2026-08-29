@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  preferredName String?
+  institution  String?
+  createdAt    DateTime @default(now())
+  lastSeenAt   DateTime @default(now())
+
+  // registration wizard progress
+  idVerified         Boolean @default(false)
+  gender             String?
+  age                Int?
+  faculty            String?
+  mbti               String?
+  availability       String? // JSON string[] of "Day:Period" slots, e.g. ["Mon:Evening"]
+  onboardingStep     Int     @default(1)
+  onboardingComplete Boolean @default(false)
+
+  // group-matching preferences (all interpreted relative to the requester)
+  sameGenderOnly Boolean @default(false)
+  ageFactor      Boolean @default(true)
+  facultyFactor  Boolean @default(true)
+  mbtiFactor     Boolean @default(true)
+
+  // games
+  ownedGames String? // JSON string[] of manually-added game names
+
+  // steam integration (Web API key based, see lib/steam.ts)
+  steamId64      String?
+  steamProfileUrl String?
+  steamGames     String? // JSON of {appid, name, playtimeMinutes, iconUrl}[]
+  steamSyncedAt  DateTime?
+
+  sentRequests     Friendship[]  @relation("requester")
+  receivedRequests Friendship[]  @relation("addressee")
+  sentMessages     Message[]     @relation("sender")
+  receivedMessages Message[]     @relation("receiver")
+  groupMemberships GroupMember[]
+}
+
+model Friendship {
+  id          String   @id @default(cuid())
+  requesterId String
+  addresseeId String
+  status      String   @default("pending") // pending | accepted
+  createdAt   DateTime @default(now())
+
+  requester User @relation("requester", fields: [requesterId], references: [id])
+  addressee User @relation("addressee", fields: [addresseeId], references: [id])
+
+  @@unique([requesterId, addresseeId])
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  senderId   String
+  receiverId String?
+  groupId    String?
+  content    String
+  createdAt  DateTime @default(now())
+
+  sender   User        @relation("sender", fields: [senderId], references: [id])
+  receiver User?       @relation("receiver", fields: [receiverId], references: [id])
+  group    MatchGroup? @relation(fields: [groupId], references: [id])
+}
+
+model MatchGroup {
+  id        String   @id @default(cuid())
+  name      String
+  dayPeriod String // e.g. "Tue:Evening"
+  summary   String? // human-readable description of shared attributes
+  createdAt DateTime @default(now())
+
+  members  GroupMember[]
+  messages Message[]
+}
+
+model GroupMember {
+  id       String   @id @default(cuid())
+  userId   String
+  groupId  String
+  score    Int      @default(0) // how many attributes this member shared with the group's seed requester
+  joinedAt DateTime @default(now())
+
+  user  User       @relation(fields: [userId], references: [id])
+  group MatchGroup @relation(fields: [groupId], references: [id])
+
+  @@unique([userId, groupId])
+}
