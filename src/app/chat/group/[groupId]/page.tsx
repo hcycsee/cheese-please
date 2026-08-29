@@ -34,7 +34,6 @@ export default async function GroupChatPage({ params }: { params: { groupId: str
         mode="group"
         targetId={group.id}
         currentUserId={user.id}
-        isAdmin={user.isAdmin}
         title={group.name}
         subtitle={`${group.summary ?? ""} · ${group.members.length} members: ${memberNames}`}
         initialMessages={messages.map((m) => ({ ...m, createdAt: m.createdAt.toISOString() }))}

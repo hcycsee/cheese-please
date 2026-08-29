@@ -38,7 +38,6 @@ export default async function DirectChatPage({ params }: { params: { friendId: s
         mode="dm"
         targetId={friend.id}
         currentUserId={user.id}
-        isAdmin={user.isAdmin}
         title={displayName(friend)}
         initialMessages={messages.map((m) => ({ ...m, createdAt: m.createdAt.toISOString() }))}
       />

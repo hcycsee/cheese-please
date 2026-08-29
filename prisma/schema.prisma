@@ -20,6 +20,10 @@ model User {
   createdAt    DateTime @default(now())
   lastSeenAt   DateTime @default(now())
 
+  // self-set demo flag standing in for a real Minecraft integration —
+  // each user flips their own, from their chat menu
+  minecraftOnline Boolean @default(false)
+
   // registration wizard progress
   idVerified         Boolean @default(false)
   gender             String?
@@ -123,12 +127,4 @@ model GroupMember {
   group MatchGroup @relation(fields: [groupId], references: [id])
 
   @@unique([userId, groupId])
-}
-
-// Single admin-managed toggle demonstrating the Minecraft integration concept:
-// just an on/off "online" flag the admin flips from the admin panel.
-model MinecraftConfig {
-  id        String   @id @default("singleton")
-  online    Boolean  @default(false)
-  updatedAt DateTime @updatedAt
 }

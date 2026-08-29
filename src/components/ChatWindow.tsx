@@ -24,7 +24,6 @@ export default function ChatWindow({
   mode,
   targetId,
   currentUserId,
-  isAdmin,
   initialMessages,
   title,
   subtitle,
@@ -32,7 +31,6 @@ export default function ChatWindow({
   mode: "dm" | "group";
   targetId: string;
   currentUserId: string;
-  isAdmin?: boolean;
   initialMessages: ChatMessage[];
   title: string;
   subtitle?: string;
@@ -129,36 +127,32 @@ export default function ChatWindow({
           <p className="font-semibold">{title}</p>
           {subtitle && <p className="text-xs text-stone-500">{subtitle}</p>}
         </div>
-        {(mode === "dm" || isAdmin) && (
-          <div className="relative">
-            <button
-              type="button"
-              className="rounded-lg px-2 py-1 text-stone-400 hover:bg-stone-100 hover:text-stone-600"
-              onClick={() => setMenuOpen((v) => !v)}
-              aria-label="Chat menu"
-            >
-              ⋯
-            </button>
-            {menuOpen && (
-              <div className="absolute right-0 top-full z-10 mt-1 w-72 rounded-xl border border-stone-200 bg-surface p-3 shadow-lg">
-                {mode === "dm" && (
-                  <button
-                    type="button"
-                    className="w-full rounded-lg px-2 py-1.5 text-left text-sm text-stone-600 hover:bg-stone-100 hover:text-red-600"
-                    onClick={blockUser}
-                  >
-                    Block this person
-                  </button>
-                )}
-                {isAdmin && (
-                  <div className={mode === "dm" ? "mt-2 border-t border-stone-100 pt-2" : ""}>
-                    <MinecraftConfigForm />
-                  </div>
-                )}
+        <div className="relative">
+          <button
+            type="button"
+            className="rounded-lg px-2 py-1 text-stone-400 hover:bg-stone-100 hover:text-stone-600"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-label="Chat menu"
+          >
+            ⋯
+          </button>
+          {menuOpen && (
+            <div className="absolute right-0 top-full z-10 mt-1 w-72 rounded-xl border border-stone-200 bg-surface p-3 shadow-lg">
+              {mode === "dm" && (
+                <button
+                  type="button"
+                  className="w-full rounded-lg px-2 py-1.5 text-left text-sm text-stone-600 hover:bg-stone-100 hover:text-red-600"
+                  onClick={blockUser}
+                >
+                  Block this person
+                </button>
+              )}
+              <div className={mode === "dm" ? "mt-2 border-t border-stone-100 pt-2" : ""}>
+                <MinecraftConfigForm />
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
       </div>
 
       <GamePanel mode={mode} targetId={targetId} currentUserId={currentUserId} />

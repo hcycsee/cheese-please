@@ -10,7 +10,7 @@ export default function MinecraftConfigForm() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/admin/minecraft-config")
+    fetch("/api/minecraft/me")
       .then((res) => res.json())
       .then((data) => {
         if (!cancelled) setOnline(!!data.online);
@@ -31,7 +31,7 @@ export default function MinecraftConfigForm() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/admin/minecraft-config", {
+      const res = await fetch("/api/minecraft/me", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ online: next }),
@@ -52,7 +52,7 @@ export default function MinecraftConfigForm() {
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-sm font-medium">Minecraft demo status</p>
-          <p className="text-xs text-stone-500">Preview an in-game "online" indicator.</p>
+          <p className="text-xs text-stone-500">Show yourself as "online" in the in-game demo indicator.</p>
         </div>
         <button
           type="button"

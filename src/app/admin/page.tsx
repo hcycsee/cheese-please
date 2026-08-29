@@ -31,10 +31,6 @@ export default async function AdminPage() {
           </div>
         ))}
       </div>
-
-      <p className="mt-6 text-xs text-stone-400">
-        The Minecraft demo status toggle now lives in each chat's "⋯" menu.
-      </p>
     </AppShell>
   );
 }
