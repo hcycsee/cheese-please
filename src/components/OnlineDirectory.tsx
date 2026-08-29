@@ -107,6 +107,18 @@ export default function OnlineDirectory({ initialUsers }: { initialUsers: Direct
     }
   }
 
+  async function blockUser(toUserId: string) {
+    if (!window.confirm("Block this person? They'll disappear from your directory and won't be able to message or add you.")) {
+      return;
+    }
+    const res = await fetch("/api/block", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: toUserId }),
+    });
+    if (res.ok) setUsers((prev) => prev.filter((u) => u.id !== toUserId));
+  }
+
   return (
     <div className="flex flex-col gap-8">
       <FilterBar filters={filters} onChange={setFilters} activeFilterCount={activeFilterCount} />
@@ -122,7 +134,7 @@ export default function OnlineDirectory({ initialUsers }: { initialUsers: Direct
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {online.map((u) => (
-              <UserCard key={u.id} user={u} online onAddFriend={sendFriendRequest} />
+              <UserCard key={u.id} user={u} online onAddFriend={sendFriendRequest} onBlock={blockUser} />
             ))}
           </div>
         )}
@@ -136,7 +148,7 @@ export default function OnlineDirectory({ initialUsers }: { initialUsers: Direct
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {offline.map((u) => (
-              <UserCard key={u.id} user={u} online={false} onAddFriend={sendFriendRequest} />
+              <UserCard key={u.id} user={u} online={false} onAddFriend={sendFriendRequest} onBlock={blockUser} />
             ))}
           </div>
         )}
@@ -207,10 +219,12 @@ function UserCard({
   user,
   online,
   onAddFriend,
+  onBlock,
 }: {
   user: DirectoryUser;
   online: boolean;
   onAddFriend: (id: string) => void;
+  onBlock: (id: string) => void;
 }) {
   const games = gameNames(user);
   return (
@@ -272,6 +286,13 @@ function UserCard({
             Message
           </a>
         )}
+        <button
+          type="button"
+          className="mt-1 w-full text-center text-xs text-stone-400 hover:text-red-600 hover:underline"
+          onClick={() => onBlock(user.id)}
+        >
+          Block
+        </button>
       </div>
     </div>
   );

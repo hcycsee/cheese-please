@@ -60,19 +60,26 @@ function ProfileChips({ user }: { user: FriendRow["user"] }) {
   );
 }
 
+type BlockedRow = { blockId: string; user: { id: string; name: string } };
+
 export default function FriendsPanel() {
   const [friends, setFriends] = useState<FriendRow[]>([]);
   const [incoming, setIncoming] = useState<FriendRow[]>([]);
   const [outgoing, setOutgoing] = useState<FriendRow[]>([]);
+  const [blocked, setBlocked] = useState<BlockedRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   async function load() {
-    const res = await fetch("/api/friends");
-    if (res.ok) {
-      const data = await res.json();
+    const [friendsRes, blockedRes] = await Promise.all([fetch("/api/friends"), fetch("/api/block")]);
+    if (friendsRes.ok) {
+      const data = await friendsRes.json();
       setFriends(data.friends);
       setIncoming(data.incoming);
       setOutgoing(data.outgoing);
+    }
+    if (blockedRes.ok) {
+      const data = await blockedRes.json();
+      setBlocked(data.blocked);
     }
     setLoading(false);
   }
@@ -95,6 +102,23 @@ export default function FriendsPanel() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action }),
     });
+    load();
+  }
+
+  async function blockUser(userId: string) {
+    if (!window.confirm("Block this person? They'll disappear from your directory and won't be able to message or add you.")) {
+      return;
+    }
+    await fetch("/api/block", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
+    load();
+  }
+
+  async function unblock(blockId: string) {
+    await fetch(`/api/block/${blockId}`, { method: "DELETE" });
     load();
   }
 
@@ -121,6 +145,9 @@ export default function FriendsPanel() {
                   </button>
                   <button className="btn-secondary text-sm" onClick={() => respond(row.friendshipId, "decline")}>
                     Decline
+                  </button>
+                  <button className="btn-ghost text-sm text-stone-400 hover:text-red-600" onClick={() => blockUser(row.user.id)}>
+                    Block
                   </button>
                 </div>
               </div>
@@ -153,6 +180,9 @@ export default function FriendsPanel() {
                   <button className="btn-ghost text-sm" onClick={() => respond(row.friendshipId, "remove")}>
                     Remove
                   </button>
+                  <button className="btn-ghost text-sm text-stone-400 hover:text-red-600" onClick={() => blockUser(row.user.id)}>
+                    Block
+                  </button>
                 </div>
               </div>
             ))}
@@ -175,6 +205,22 @@ export default function FriendsPanel() {
                 </div>
                 <button className="btn-ghost text-sm" onClick={() => respond(row.friendshipId, "remove")}>
                   Cancel
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {blocked.length > 0 && (
+        <section>
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-stone-500">Blocked</h2>
+          <div className="flex flex-col gap-2">
+            {blocked.map((row) => (
+              <div key={row.blockId} className="card flex items-center justify-between">
+                <p className="font-medium">{row.user.name}</p>
+                <button className="btn-ghost text-sm" onClick={() => unblock(row.blockId)}>
+                  Unblock
                 </button>
               </div>
             ))}
