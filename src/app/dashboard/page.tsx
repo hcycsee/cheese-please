@@ -6,9 +6,14 @@ import { visibleChips } from "@/lib/format";
 export default async function DashboardPage() {
   const user = await requireOnboardedUser();
 
+  const blocks = await prisma.block.findMany({
+    where: { OR: [{ blockerId: user.id }, { blockedId: user.id }] },
+  });
+  const blockedIds = blocks.map((b) => (b.blockerId === user.id ? b.blockedId : b.blockerId));
+
   const [others, friendships] = await Promise.all([
     prisma.user.findMany({
-      where: { id: { not: user.id }, onboardingComplete: true },
+      where: { id: { not: user.id, notIn: blockedIds }, onboardingComplete: true },
       select: {
         id: true,
         name: true,

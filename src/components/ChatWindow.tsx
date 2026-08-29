@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { getSocket } from "@/lib/socketClient";
 import GamePanel from "./GamePanel";
 
@@ -33,6 +34,19 @@ export default function ChatWindow({
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  async function blockUser() {
+    if (!window.confirm("Block this person? They'll disappear from your directory and won't be able to message or add you.")) {
+      return;
+    }
+    await fetch("/api/block", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: targetId }),
+    });
+    router.push("/friends");
+  }
 
   useEffect(() => {
     const socket = getSocket();
@@ -73,9 +87,16 @@ export default function ChatWindow({
 
   return (
     <div className="card flex h-[70vh] flex-col p-0">
-      <div className="border-b border-stone-200 px-5 py-3">
-        <p className="font-semibold">{title}</p>
-        {subtitle && <p className="text-xs text-stone-500">{subtitle}</p>}
+      <div className="flex items-center justify-between border-b border-stone-200 px-5 py-3">
+        <div>
+          <p className="font-semibold">{title}</p>
+          {subtitle && <p className="text-xs text-stone-500">{subtitle}</p>}
+        </div>
+        {mode === "dm" && (
+          <button type="button" className="text-xs text-stone-400 hover:text-red-600 hover:underline" onClick={blockUser}>
+            Block
+          </button>
+        )}
       </div>
 
       <GamePanel mode={mode} targetId={targetId} currentUserId={currentUserId} />

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import Navbar from "./Navbar";
+import NotificationToasts from "./NotificationToasts";
 
 export async function requireOnboardedUser() {
   const user = await getCurrentUser();
@@ -13,7 +14,7 @@ export default function AppShell({
   user,
   children,
 }: {
-  user: { name: string; preferredName?: string | null; avatarUrl?: string | null };
+  user: { id: string; name: string; preferredName?: string | null; avatarUrl?: string | null };
   children: React.ReactNode;
 }) {
   // Only pass the fields Navbar actually needs into the client bundle — the
@@ -25,6 +26,7 @@ export default function AppShell({
     <div className="min-h-screen bg-stone-50">
       <Navbar user={safeUser} />
       <main className="mx-auto max-w-5xl px-6 py-8">{children}</main>
+      <NotificationToasts currentUserId={user.id} />
     </div>
   );
 }

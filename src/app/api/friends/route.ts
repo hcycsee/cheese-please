@@ -77,6 +77,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "A friend request already exists between you two." }, { status: 409 });
   }
 
+  const blocked = await prisma.block.findFirst({
+    where: {
+      OR: [
+        { blockerId: userId, blockedId: toUserId },
+        { blockerId: toUserId, blockedId: userId },
+      ],
+    },
+  });
+  if (blocked) {
+    return NextResponse.json({ error: "You can't send a friend request to this user." }, { status: 403 });
+  }
+
   const friendship = await prisma.friendship.create({
     data: { requesterId: userId, addresseeId: toUserId, status: "pending" },
   });

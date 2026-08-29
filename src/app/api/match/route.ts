@@ -1,14 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getCurrentUserId } from "@/lib/session";
-import { getCurrentDayPeriod, parseJsonArray, PERIODS } from "@/lib/constants";
+import { getCurrentDayPeriod, parseJsonArray } from "@/lib/constants";
 import { pickGroupMembers, summarizeSharedAttributes, GROUP_TARGET_SIZE } from "@/lib/matching";
 import { listOnlineUserIds } from "@/lib/presence";
 import { getIo } from "@/lib/socketServer";
-
-const DAY_NAMES: Record<string, string> = {
-  Mon: "Monday", Tue: "Tuesday", Wed: "Wednesday", Thu: "Thursday", Fri: "Friday", Sat: "Saturday", Sun: "Sunday",
-};
+import { randomGroupName } from "@/lib/groupNames";
 
 const RECENT_GROUP_WINDOW_MS = 3 * 60 * 60 * 1000; // 3 hours
 
@@ -21,7 +18,7 @@ export async function POST() {
     return NextResponse.json({ error: "Finish setting up your profile first." }, { status: 400 });
   }
 
-  const { day, period, slot } = getCurrentDayPeriod();
+  const { slot } = getCurrentDayPeriod();
 
   // If the requester already has a fresh group for this slot, just send them back to it.
   const recent = await prisma.groupMember.findFirst({
@@ -40,8 +37,13 @@ export async function POST() {
     return NextResponse.json({ groupId: null, message: "No one else is online right now — try again soon." });
   }
 
+  const blocks = await prisma.block.findMany({
+    where: { OR: [{ blockerId: userId }, { blockedId: userId }] },
+  });
+  const blockedIds = new Set(blocks.map((b) => (b.blockerId === userId ? b.blockedId : b.blockerId)));
+
   const onlineCandidates = await prisma.user.findMany({
-    where: { id: { in: onlineIds }, onboardingComplete: true },
+    where: { id: { in: onlineIds.filter((id) => !blockedIds.has(id)) }, onboardingComplete: true },
   });
   if (onlineCandidates.length === 0) {
     return NextResponse.json({ groupId: null, message: "No one else is online right now — try again soon." });
@@ -60,8 +62,7 @@ export async function POST() {
     });
   }
 
-  const periodLabel = PERIODS.find((p) => p.key === period)?.label ?? period;
-  const name = `${DAY_NAMES[day]} ${periodLabel} Group`;
+  const name = randomGroupName();
   const summary = summarizeSharedAttributes(requester, selected);
 
   const group = await prisma.matchGroup.create({

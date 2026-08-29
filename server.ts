@@ -138,6 +138,7 @@ app.prepare().then(() => {
 
         const message = await prisma.message.create({
           data: { senderId: userId, receiverId: toUserId, content },
+          include: { sender: { select: { id: true, name: true, preferredName: true } } },
         });
 
         io.to(`user:${toUserId}`).to(`user:${userId}`).emit("chat:message", message);
@@ -166,6 +167,7 @@ app.prepare().then(() => {
 
         const message = await prisma.message.create({
           data: { senderId: userId, groupId, content },
+          include: { sender: { select: { id: true, name: true, preferredName: true } } },
         });
 
         io.to(`group:${groupId}`).emit("chat:message", message);
