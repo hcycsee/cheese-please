@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { getSocket } from "@/lib/socketClient";
+import GamePanel from "./GamePanel";
 
 export type ChatMessage = {
   id: string;
@@ -76,6 +77,8 @@ export default function ChatWindow({
         <p className="font-semibold">{title}</p>
         {subtitle && <p className="text-xs text-stone-500">{subtitle}</p>}
       </div>
+
+      <GamePanel mode={mode} targetId={targetId} currentUserId={currentUserId} />
 
       <div className="flex-1 space-y-3 overflow-y-auto px-5 py-4">
         {messages.length === 0 && <p className="text-sm text-stone-400">No messages yet — say hi!</p>}
