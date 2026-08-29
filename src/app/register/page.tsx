@@ -87,7 +87,7 @@ export default function RegisterPage() {
       <div className="mb-6 flex gap-2">
         {STEP_LABELS.map((label, i) => (
           <div key={label} className="flex-1">
-            <div className={`h-1.5 rounded-full ${i + 1 <= step ? "bg-cheese-500" : "bg-stone-200"}`} />
+            <div className={`h-1.5 rounded-full ${i + 1 <= step ? "bg-brand-500" : "bg-stone-200"}`} />
             <p className="mt-1 text-center text-[11px] text-stone-500">{label}</p>
           </div>
         ))}

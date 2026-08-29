@@ -93,7 +93,7 @@ export default function AvailabilityGrid({
                         onClick={() => toggle(slot)}
                         aria-pressed={isOn}
                         className={`h-9 w-full rounded-lg border transition-colors ${
-                          isOn ? "border-cheese-500 bg-cheese-400" : "border-stone-200 bg-stone-50 hover:bg-stone-100"
+                          isOn ? "border-brand-500 bg-brand-400" : "border-stone-200 bg-stone-50 hover:bg-stone-100"
                         }`}
                       />
                     </td>

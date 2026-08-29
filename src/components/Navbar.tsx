@@ -39,7 +39,7 @@ export default function Navbar({
                 key={link.href}
                 href={link.href}
                 className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
-                  pathname.startsWith(link.href) ? "bg-cheese-100 text-cheese-700" : "text-stone-600 hover:bg-stone-100"
+                  pathname.startsWith(link.href) ? "bg-brand-100 text-brand-700" : "text-stone-600 hover:bg-stone-100"
                 }`}
               >
                 {link.label}
@@ -64,7 +64,7 @@ export default function Navbar({
             key={link.href}
             href={link.href}
             className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium ${
-              pathname.startsWith(link.href) ? "bg-cheese-100 text-cheese-700" : "text-stone-600 hover:bg-stone-100"
+              pathname.startsWith(link.href) ? "bg-brand-100 text-brand-700" : "text-stone-600 hover:bg-stone-100"
             }`}
           >
             {link.label}

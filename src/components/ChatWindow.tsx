@@ -86,7 +86,7 @@ export default function ChatWindow({
           const mine = m.senderId === currentUserId;
           return (
             <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-              <div className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${mine ? "bg-cheese-500 text-stone-900" : "bg-stone-100"}`}>
+              <div className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${mine ? "bg-brand-500 text-white" : "bg-stone-100"}`}>
                 {mode === "group" && !mine && m.sender && (
                   <p className="mb-0.5 text-xs font-semibold text-stone-500">
                     {m.sender.preferredName || m.sender.name}

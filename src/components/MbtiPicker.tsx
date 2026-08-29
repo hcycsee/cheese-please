@@ -80,7 +80,7 @@ export default function MbtiPicker({
                   aria-pressed={selected}
                   className={`rounded-xl border px-3 py-2 text-left text-sm transition-colors ${
                     selected
-                      ? "border-cheese-500 bg-cheese-100 font-medium"
+                      ? "border-brand-500 bg-brand-100 font-medium"
                       : "border-stone-200 bg-stone-50 hover:bg-stone-100"
                   }`}
                 >

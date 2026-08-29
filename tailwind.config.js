@@ -4,17 +4,18 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        cheese: {
-          50: "#fffdf3",
-          100: "#fff8d9",
-          200: "#ffedad",
-          300: "#ffdd70",
-          400: "#ffc933",
-          500: "#f7b500",
-          600: "#d99400",
-          700: "#b06f02",
-          800: "#8f570b",
-          900: "#76480f",
+        // matches the purple/blue pixel-art button artwork and mascot
+        brand: {
+          50: "#f6f4fa",
+          100: "#e8e3f2",
+          200: "#cec3e4",
+          300: "#af9cd3",
+          400: "#8c72c0",
+          500: "#6f4fb0",
+          600: "#62469b",
+          700: "#523a82",
+          800: "#45316d",
+          900: "#3a295b",
         },
       },
     },
