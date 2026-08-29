@@ -16,11 +16,15 @@ presence/chat, JWT cookie auth (`jose`), and an optional Steam Web API integrati
 
 ## Setup
 
+On any machine (this repo has no other setup steps — `npm install` auto-creates `.env` and the local database):
+
 1. Install [Node.js 20 LTS](https://nodejs.org) if you don't have it.
 2. `npm install`
-3. `npm run db:push` — creates `prisma/dev.db` (SQLite) from `prisma/schema.prisma`.
-4. `npm run dev`
-5. Open http://localhost:3000
+3. `npm run dev`
+4. Open http://localhost:3000
+
+If step 2 or 3 errors out, it's almost always one of: Node isn't actually on your PATH (check `node -v` in a
+*new* terminal after installing it), or another process is already using port 3000.
 
 To try the group-matching and chat features you'll want two accounts online at once — open a second browser
 (or an incognito window) and register another account.
