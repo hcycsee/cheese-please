@@ -11,6 +11,7 @@ type FriendRow = {
     name: string;
     preferredName: string | null;
     avatarUrl: string | null;
+    bio: string | null;
     gender: string | null;
     ageRange: string | null;
     faculty: string | null;
@@ -42,14 +43,20 @@ function Avatar({ user, showOnlineDot }: { user: FriendRow["user"]; showOnlineDo
 }
 
 function ProfileChips({ user }: { user: FriendRow["user"] }) {
-  if (!user.gender && !user.ageRange && !user.faculty && !user.mbti) return null;
+  const hasChips = user.gender || user.ageRange || user.faculty || user.mbti;
+  if (!hasChips && !user.bio) return null;
   return (
-    <div className="mt-1 flex flex-wrap gap-1">
-      {user.gender && <span className="chip">{user.gender}</span>}
-      {user.ageRange && <span className="chip">{user.ageRange}</span>}
-      {user.faculty && <span className="chip">{user.faculty}</span>}
-      {user.mbti && <span className="chip">{user.mbti}</span>}
-    </div>
+    <>
+      {hasChips && (
+        <div className="mt-1 flex flex-wrap gap-1">
+          {user.gender && <span className="chip">{user.gender}</span>}
+          {user.ageRange && <span className="chip">{user.ageRange}</span>}
+          {user.faculty && <span className="chip">{user.faculty}</span>}
+          {user.mbti && <span className="chip">{user.mbti}</span>}
+        </div>
+      )}
+      {user.bio && <p className="mt-1 max-w-md truncate text-xs text-stone-600">{user.bio}</p>}
+    </>
   );
 }
 

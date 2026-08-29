@@ -14,6 +14,7 @@ export default async function DashboardPage() {
         name: true,
         preferredName: true,
         avatarUrl: true,
+        bio: true,
         gender: true,
         age: true,
         faculty: true,

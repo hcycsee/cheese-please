@@ -2,14 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { getSocket } from "@/lib/socketClient";
-import { displayName } from "@/lib/format";
-import { parseJsonArray } from "@/lib/constants";
+import { displayName, ageRangeBuckets } from "@/lib/format";
+import { parseJsonArray, GENDERS, FACULTIES, MBTI_TYPES } from "@/lib/constants";
 
 export type DirectoryUser = {
   id: string;
   name: string;
   preferredName: string | null;
   avatarUrl: string | null;
+  bio: string | null;
   gender: string | null;
   ageRange: string | null;
   faculty: string | null;
@@ -32,9 +33,35 @@ function gameNames(user: DirectoryUser): string[] {
   return Array.from(new Set([...manual, ...steam]));
 }
 
+const AGE_RANGE_OPTIONS = ageRangeBuckets();
+
+type Filters = {
+  search: string;
+  gender: string;
+  faculty: string;
+  mbti: string;
+  ageRange: string;
+};
+
+const EMPTY_FILTERS: Filters = { search: "", gender: "", faculty: "", mbti: "", ageRange: "" };
+
+function matchesFilters(user: DirectoryUser, filters: Filters): boolean {
+  // Every active filter must match — an AND across categories, not an OR.
+  if (filters.search.trim()) {
+    const needle = filters.search.trim().toLowerCase();
+    if (!displayName(user).toLowerCase().includes(needle)) return false;
+  }
+  if (filters.gender && user.gender !== filters.gender) return false;
+  if (filters.faculty && user.faculty !== filters.faculty) return false;
+  if (filters.mbti && user.mbti !== filters.mbti) return false;
+  if (filters.ageRange && user.ageRange !== filters.ageRange) return false;
+  return true;
+}
+
 export default function OnlineDirectory({ initialUsers }: { initialUsers: DirectoryUser[] }) {
   const [onlineIds, setOnlineIds] = useState<Set<string>>(new Set());
   const [users, setUsers] = useState(initialUsers);
+  const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
 
   useEffect(() => {
     const socket = getSocket();
@@ -58,10 +85,13 @@ export default function OnlineDirectory({ initialUsers }: { initialUsers: Direct
   }, []);
 
   const { online, offline } = useMemo(() => {
-    const online = users.filter((u) => onlineIds.has(u.id));
-    const offline = users.filter((u) => !onlineIds.has(u.id));
+    const filtered = users.filter((u) => matchesFilters(u, filters));
+    const online = filtered.filter((u) => onlineIds.has(u.id));
+    const offline = filtered.filter((u) => !onlineIds.has(u.id));
     return { online, offline };
-  }, [users, onlineIds]);
+  }, [users, onlineIds, filters]);
+
+  const activeFilterCount = Object.values(filters).filter(Boolean).length;
 
   async function sendFriendRequest(toUserId: string) {
     const res = await fetch("/api/friends", {
@@ -79,12 +109,16 @@ export default function OnlineDirectory({ initialUsers }: { initialUsers: Direct
 
   return (
     <div className="flex flex-col gap-8">
+      <FilterBar filters={filters} onChange={setFilters} activeFilterCount={activeFilterCount} />
+
       <section>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-stone-500">
           Online ({online.length})
         </h2>
         {online.length === 0 ? (
-          <p className="text-sm text-stone-500">No one else is online right now.</p>
+          <p className="text-sm text-stone-500">
+            {activeFilterCount > 0 ? "No one online matches your filters." : "No one else is online right now."}
+          </p>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {online.map((u) => (
@@ -97,12 +131,74 @@ export default function OnlineDirectory({ initialUsers }: { initialUsers: Direct
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-stone-500">
           Offline ({offline.length})
         </h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {offline.map((u) => (
-            <UserCard key={u.id} user={u} online={false} onAddFriend={sendFriendRequest} />
-          ))}
-        </div>
+        {offline.length === 0 && activeFilterCount > 0 ? (
+          <p className="text-sm text-stone-500">No one offline matches your filters.</p>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {offline.map((u) => (
+              <UserCard key={u.id} user={u} online={false} onAddFriend={sendFriendRequest} />
+            ))}
+          </div>
+        )}
       </section>
+    </div>
+  );
+}
+
+function FilterBar({
+  filters,
+  onChange,
+  activeFilterCount,
+}: {
+  filters: Filters;
+  onChange: (f: Filters) => void;
+  activeFilterCount: number;
+}) {
+  function set<K extends keyof Filters>(key: K, value: Filters[K]) {
+    onChange({ ...filters, [key]: value });
+  }
+
+  return (
+    <div className="card flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <input
+          className="input max-w-xs"
+          placeholder="Search by name..."
+          value={filters.search}
+          onChange={(e) => set("search", e.target.value)}
+        />
+        {activeFilterCount > 0 && (
+          <button type="button" className="btn-ghost text-xs" onClick={() => onChange(EMPTY_FILTERS)}>
+            Clear filters ({activeFilterCount})
+          </button>
+        )}
+      </div>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <select className="input" value={filters.gender} onChange={(e) => set("gender", e.target.value)}>
+          <option value="">Any gender</option>
+          {GENDERS.map((g) => (
+            <option key={g} value={g}>{g}</option>
+          ))}
+        </select>
+        <select className="input" value={filters.ageRange} onChange={(e) => set("ageRange", e.target.value)}>
+          <option value="">Any age</option>
+          {AGE_RANGE_OPTIONS.map((a) => (
+            <option key={a} value={a}>{a}</option>
+          ))}
+        </select>
+        <select className="input" value={filters.faculty} onChange={(e) => set("faculty", e.target.value)}>
+          <option value="">Any faculty</option>
+          {FACULTIES.map((f) => (
+            <option key={f} value={f}>{f}</option>
+          ))}
+        </select>
+        <select className="input" value={filters.mbti} onChange={(e) => set("mbti", e.target.value)}>
+          <option value="">Any MBTI</option>
+          {MBTI_TYPES.map((t) => (
+            <option key={t} value={t}>{t}</option>
+          ))}
+        </select>
+      </div>
     </div>
   );
 }
@@ -145,6 +241,8 @@ function UserCard({
           </div>
         </div>
       </div>
+
+      {user.bio && <p className="mt-2 line-clamp-2 text-xs text-stone-600">{user.bio}</p>}
 
       {games.length > 0 && (
         <p className="mt-2 truncate text-xs text-stone-500">

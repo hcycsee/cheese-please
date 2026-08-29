@@ -11,6 +11,7 @@ type SteamGame = { appid: number; name: string; playtimeMinutes: number; iconUrl
 export type ProfileData = {
   preferredName: string | null;
   institution: string | null;
+  bio: string | null;
   gender: string | null;
   faculty: string | null;
   age: number | null;
@@ -49,6 +50,7 @@ function SavedBadge({ saved }: { saved: boolean }) {
 function BasicInfoCard({ initial }: { initial: ProfileData }) {
   const [preferredName, setPreferredName] = useState(initial.preferredName ?? "");
   const [institution, setInstitution] = useState(initial.institution ?? "");
+  const [bio, setBio] = useState(initial.bio ?? "");
   const [gender, setGender] = useState(initial.gender ?? "");
   const [faculty, setFaculty] = useState(initial.faculty ?? "");
   const [age, setAge] = useState(initial.age != null ? String(initial.age) : "");
@@ -69,6 +71,7 @@ function BasicInfoCard({ initial }: { initial: ProfileData }) {
         body: JSON.stringify({
           preferredName,
           institution,
+          bio,
           gender,
           faculty,
           age: age === "" ? null : age,
@@ -116,6 +119,20 @@ function BasicInfoCard({ initial }: { initial: ProfileData }) {
           <label className="label">Age *</label>
           <input type="number" min={13} max={120} className="input" value={age} onChange={(e) => setAge(e.target.value)} required />
         </div>
+      </div>
+
+      <div>
+        <div className="mb-1 flex items-center justify-between">
+          <label className="label mb-0">Bio (optional)</label>
+          <span className="text-xs text-stone-400">{bio.length}/300</span>
+        </div>
+        <textarea
+          className="input min-h-[80px] resize-y"
+          maxLength={300}
+          placeholder="Tell people a bit about yourself..."
+          value={bio}
+          onChange={(e) => setBio(e.target.value)}
+        />
       </div>
 
       <div>

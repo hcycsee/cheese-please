@@ -11,6 +11,7 @@ export default async function ProfilePage() {
         initial={{
           preferredName: user.preferredName,
           institution: user.institution,
+          bio: user.bio,
           gender: user.gender,
           faculty: user.faculty,
           age: user.age,

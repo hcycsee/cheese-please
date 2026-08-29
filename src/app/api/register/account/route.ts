@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { createSessionToken, SESSION_COOKIE } from "@/lib/auth";
+import { containsProfanity } from "@/lib/profanity";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
@@ -12,6 +13,9 @@ export async function POST(req: NextRequest) {
   const institution = typeof body?.institution === "string" ? body.institution.trim() : "";
 
   if (!name) return NextResponse.json({ error: "Name is required." }, { status: 400 });
+  if (containsProfanity(name) || containsProfanity(preferredName)) {
+    return NextResponse.json({ error: "Please choose an appropriate name." }, { status: 400 });
+  }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return NextResponse.json({ error: "A valid email is required." }, { status: 400 });
   }

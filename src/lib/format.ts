@@ -8,16 +8,26 @@ export function publicUser<T extends { passwordHash?: string }>(user: T): Omit<T
   return rest;
 }
 
+const AGE_BANDS = [18, 25, 32, 39, 46, 53, 60];
+
 /** Buckets an exact age into a coarse public range (e.g. "25–31") rather than
  *  exposing the precise number to other users. */
 export function ageRangeLabel(age: number | null | undefined): string | null {
   if (age == null) return null;
   if (age < 18) return "Minor";
-  const bands = [18, 25, 32, 39, 46, 53, 60];
-  for (let i = 0; i < bands.length - 1; i++) {
-    if (age >= bands[i] && age < bands[i + 1]) return `${bands[i]}–${bands[i + 1] - 1}`;
+  for (let i = 0; i < AGE_BANDS.length - 1; i++) {
+    if (age >= AGE_BANDS[i] && age < AGE_BANDS[i + 1]) return `${AGE_BANDS[i]}–${AGE_BANDS[i + 1] - 1}`;
   }
-  return `${bands[bands.length - 1]}+`;
+  return `${AGE_BANDS[AGE_BANDS.length - 1]}+`;
+}
+
+/** The full ordered list of possible ageRangeLabel outputs — used to build the
+ *  age-range filter's option list. */
+export function ageRangeBuckets(): string[] {
+  const buckets = ["Minor"];
+  for (let i = 0; i < AGE_BANDS.length - 1; i++) buckets.push(`${AGE_BANDS[i]}–${AGE_BANDS[i + 1] - 1}`);
+  buckets.push(`${AGE_BANDS[AGE_BANDS.length - 1]}+`);
+  return buckets;
 }
 
 /** Applies a user's own chip-visibility preferences before their profile is

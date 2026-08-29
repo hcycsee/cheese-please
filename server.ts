@@ -12,6 +12,7 @@ import { gameRoomKey, getSession as getBaseSession, type GameMode, type GameType
 import * as TileRush from "./src/lib/games/tileRush";
 import * as TicTacToe from "./src/lib/games/tictactoe";
 import * as Gartic from "./src/lib/games/gartic";
+import { containsProfanity } from "./src/lib/profanity";
 
 const dev = process.env.NODE_ENV !== "production";
 const port = Number(process.env.PORT) || 3000;
@@ -130,6 +131,10 @@ app.prepare().then(() => {
           socket.emit("chat:error", { message: "You can only message friends." });
           return;
         }
+        if (containsProfanity(content)) {
+          socket.emit("chat:error", { message: "Please keep messages appropriate." });
+          return;
+        }
 
         const message = await prisma.message.create({
           data: { senderId: userId, receiverId: toUserId, content },
@@ -152,6 +157,10 @@ app.prepare().then(() => {
         });
         if (!membership) {
           socket.emit("chat:error", { message: "You're not in that group." });
+          return;
+        }
+        if (containsProfanity(content)) {
+          socket.emit("chat:error", { message: "Please keep messages appropriate." });
           return;
         }
 
@@ -297,6 +306,14 @@ app.prepare().then(() => {
       if (mode !== "group" || !targetId || typeof content !== "string") return;
       const key = gameRoomKey(userId, mode, targetId);
       const rooms = gameRooms(userId, mode, targetId);
+
+      const session = Gartic.getSession(key);
+      const turn = session ? Gartic.myTurn(session, userId) : null;
+      if (turn?.promptType === "write" && containsProfanity(content)) {
+        socket.emit("game:error", { message: "Please keep submissions appropriate." });
+        return;
+      }
+
       Gartic.submitTurn(key, userId, content, (s) => notifyGartic(rooms, s));
     });
 

@@ -3,6 +3,9 @@ import { prisma } from "@/lib/db";
 import { getCurrentUserId } from "@/lib/session";
 import { publicUser } from "@/lib/format";
 import { FACULTIES, GENDERS, MBTI_TYPES } from "@/lib/constants";
+import { containsProfanity } from "@/lib/profanity";
+
+const MAX_BIO_LENGTH = 300;
 
 export async function PATCH(req: NextRequest) {
   const userId = await getCurrentUserId();
@@ -11,8 +14,21 @@ export async function PATCH(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const data: Record<string, unknown> = {};
 
-  if (typeof body?.preferredName === "string") data.preferredName = body.preferredName.trim() || null;
+  if (typeof body?.preferredName === "string") {
+    const preferredName = body.preferredName.trim();
+    if (containsProfanity(preferredName)) {
+      return NextResponse.json({ error: "Please choose an appropriate preferred name." }, { status: 400 });
+    }
+    data.preferredName = preferredName || null;
+  }
   if (typeof body?.institution === "string") data.institution = body.institution.trim() || null;
+  if (typeof body?.bio === "string") {
+    const bio = body.bio.trim().slice(0, MAX_BIO_LENGTH);
+    if (containsProfanity(bio)) {
+      return NextResponse.json({ error: "Please keep your bio appropriate." }, { status: 400 });
+    }
+    data.bio = bio || null;
+  }
   if (typeof body?.gender === "string") {
     if (!GENDERS.includes(body.gender as any)) return NextResponse.json({ error: "Invalid gender." }, { status: 400 });
     data.gender = body.gender;

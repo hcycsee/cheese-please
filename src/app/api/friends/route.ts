@@ -9,6 +9,7 @@ const PROFILE_FIELDS = {
   name: true,
   preferredName: true,
   avatarUrl: true,
+  bio: true,
   gender: true,
   age: true,
   faculty: true,
