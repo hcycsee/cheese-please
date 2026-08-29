@@ -21,6 +21,15 @@ const app = next({ dev });
 const handle = app.getRequestHandler();
 
 const MAX_MESSAGE_LENGTH = 2000;
+const MAX_IMAGE_DATA_URL_LENGTH = 7_000_000; // ~5MB decoded
+
+function normalizeImageUrl(imageUrl: unknown): string | null | undefined {
+  if (imageUrl === undefined) return undefined;
+  if (typeof imageUrl !== "string") return null;
+  if (!/^data:image\/(png|jpeg|jpg|gif|webp);base64,/.test(imageUrl)) return null;
+  if (imageUrl.length > MAX_IMAGE_DATA_URL_LENGTH) return null;
+  return imageUrl;
+}
 
 function gameRooms(userId: string, mode: GameMode, targetId: string): string[] {
   return mode === "group" ? [`group:${targetId}`] : [`user:${userId}`, `user:${targetId}`];
@@ -112,11 +121,17 @@ app.prepare().then(() => {
     socket.emit("presence:list", listOnlineUserIds());
     socket.broadcast.emit("presence:online", { userId });
 
-    socket.on("chat:dm", async (payload: { toUserId?: string; content?: string }) => {
+    socket.on("chat:dm", async (payload: { toUserId?: string; content?: string; imageUrl?: string }) => {
       try {
         const toUserId = payload?.toUserId;
         const content = (payload?.content ?? "").trim().slice(0, MAX_MESSAGE_LENGTH);
-        if (!toUserId || !content) return;
+        const imageUrl = normalizeImageUrl(payload?.imageUrl);
+        if (!toUserId) return;
+        if (payload?.imageUrl !== undefined && imageUrl === null) {
+          socket.emit("chat:error", { message: "Image must be a PNG, JPEG, GIF, or WebP under 5MB." });
+          return;
+        }
+        if (!content && !imageUrl) return;
 
         const friendship = await prisma.friendship.findFirst({
           where: {
@@ -131,13 +146,13 @@ app.prepare().then(() => {
           socket.emit("chat:error", { message: "You can only message friends." });
           return;
         }
-        if (containsProfanity(content)) {
+        if (content && containsProfanity(content)) {
           socket.emit("chat:error", { message: "Please keep messages appropriate." });
           return;
         }
 
         const message = await prisma.message.create({
-          data: { senderId: userId, receiverId: toUserId, content },
+          data: { senderId: userId, receiverId: toUserId, content, imageUrl: imageUrl || null },
           include: { sender: { select: { id: true, name: true, preferredName: true } } },
         });
 
@@ -147,11 +162,17 @@ app.prepare().then(() => {
       }
     });
 
-    socket.on("chat:group", async (payload: { groupId?: string; content?: string }) => {
+    socket.on("chat:group", async (payload: { groupId?: string; content?: string; imageUrl?: string }) => {
       try {
         const groupId = payload?.groupId;
         const content = (payload?.content ?? "").trim().slice(0, MAX_MESSAGE_LENGTH);
-        if (!groupId || !content) return;
+        const imageUrl = normalizeImageUrl(payload?.imageUrl);
+        if (!groupId) return;
+        if (payload?.imageUrl !== undefined && imageUrl === null) {
+          socket.emit("chat:error", { message: "Image must be a PNG, JPEG, GIF, or WebP under 5MB." });
+          return;
+        }
+        if (!content && !imageUrl) return;
 
         const membership = await prisma.groupMember.findUnique({
           where: { userId_groupId: { userId, groupId } },
@@ -160,13 +181,13 @@ app.prepare().then(() => {
           socket.emit("chat:error", { message: "You're not in that group." });
           return;
         }
-        if (containsProfanity(content)) {
+        if (content && containsProfanity(content)) {
           socket.emit("chat:error", { message: "Please keep messages appropriate." });
           return;
         }
 
         const message = await prisma.message.create({
-          data: { senderId: userId, groupId, content },
+          data: { senderId: userId, groupId, content, imageUrl: imageUrl || null },
           include: { sender: { select: { id: true, name: true, preferredName: true } } },
         });
 

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSocket } from "@/lib/socketClient";
 import GamePanel from "./GamePanel";
+import MinecraftConfigForm from "./MinecraftConfigForm";
 
 export type ChatMessage = {
   id: string;
@@ -11,9 +12,13 @@ export type ChatMessage = {
   receiverId?: string | null;
   groupId?: string | null;
   content: string;
+  imageUrl?: string | null;
   createdAt: string;
   sender?: { id: string; name: string; preferredName: string | null };
 };
+
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const ACCEPTED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp"];
 
 export default function ChatWindow({
   mode,
@@ -32,8 +37,12 @@ export default function ChatWindow({
 }) {
   const [messages, setMessages] = useState(initialMessages);
   const [draft, setDraft] = useState("");
+  const [pendingImage, setPendingImage] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   async function blockUser() {
@@ -75,13 +84,39 @@ export default function ChatWindow({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
 
+  function pickImage() {
+    fileInputRef.current?.click();
+  }
+
+  function onImageSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setImageError(null);
+
+    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+      setImageError("Only PNG, JPEG, GIF, or WebP images are supported.");
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      setImageError("Image is too large (max 5MB).");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => setPendingImage(reader.result as string);
+    reader.readAsDataURL(file);
+  }
+
   function send() {
     const content = draft.trim();
-    if (!content) return;
+    if (!content && !pendingImage) return;
     const socket = getSocket();
-    if (mode === "dm") socket.emit("chat:dm", { toUserId: targetId, content });
-    else socket.emit("chat:group", { groupId: targetId, content });
+    const payload = pendingImage ? { content, imageUrl: pendingImage } : { content };
+    if (mode === "dm") socket.emit("chat:dm", { toUserId: targetId, ...payload });
+    else socket.emit("chat:group", { groupId: targetId, ...payload });
     setDraft("");
+    setPendingImage(null);
     setError(null);
   }
 
@@ -92,11 +127,32 @@ export default function ChatWindow({
           <p className="font-semibold">{title}</p>
           {subtitle && <p className="text-xs text-stone-500">{subtitle}</p>}
         </div>
-        {mode === "dm" && (
-          <button type="button" className="text-xs text-stone-400 hover:text-red-600 hover:underline" onClick={blockUser}>
-            Block
+        <div className="relative">
+          <button
+            type="button"
+            className="rounded-lg px-2 py-1 text-stone-400 hover:bg-stone-100 hover:text-stone-600"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-label="Chat menu"
+          >
+            ⋯
           </button>
-        )}
+          {menuOpen && (
+            <div className="absolute right-0 top-full z-10 mt-1 w-72 rounded-xl border border-stone-200 bg-surface p-3 shadow-lg">
+              {mode === "dm" && (
+                <button
+                  type="button"
+                  className="w-full rounded-lg px-2 py-1.5 text-left text-sm text-stone-600 hover:bg-stone-100 hover:text-red-600"
+                  onClick={blockUser}
+                >
+                  Block this person
+                </button>
+              )}
+              <div className={mode === "dm" ? "mt-2 border-t border-stone-100 pt-2" : ""}>
+                <MinecraftConfigForm />
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <GamePanel mode={mode} targetId={targetId} currentUserId={currentUserId} />
@@ -113,7 +169,11 @@ export default function ChatWindow({
                     {m.sender.preferredName || m.sender.name}
                   </p>
                 )}
-                <p className="whitespace-pre-wrap break-words">{m.content}</p>
+                {m.imageUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={m.imageUrl} alt="" className="mb-1 max-h-64 max-w-full rounded-lg object-contain" />
+                )}
+                {m.content && <p className="whitespace-pre-wrap break-words">{m.content}</p>}
               </div>
             </div>
           );
@@ -122,8 +182,35 @@ export default function ChatWindow({
       </div>
 
       {error && <p className="px-5 pb-1 text-xs text-red-600">{error}</p>}
+      {imageError && <p className="px-5 pb-1 text-xs text-red-600">{imageError}</p>}
+
+      {pendingImage && (
+        <div className="flex items-center gap-2 border-t border-stone-200 px-5 pt-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={pendingImage} alt="" className="h-14 w-14 rounded-lg object-cover" />
+          <button type="button" className="text-xs text-stone-400 hover:text-red-600" onClick={() => setPendingImage(null)}>
+            Remove
+          </button>
+        </div>
+      )}
 
       <div className="flex gap-2 border-t border-stone-200 p-3">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/gif,image/webp"
+          className="hidden"
+          onChange={onImageSelected}
+        />
+        <button
+          type="button"
+          className="btn-secondary px-3"
+          onClick={pickImage}
+          title="Attach an image or GIF"
+          aria-label="Attach an image or GIF"
+        >
+          🖼️
+        </button>
         <input
           className="input"
           placeholder="Type a message..."

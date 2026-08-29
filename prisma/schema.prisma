@@ -16,8 +16,13 @@ model User {
   institution  String?
   avatarUrl    String? // data: URL of a small square profile picture
   bio          String? // free-text "about me", always visible to other users
+  isAdmin      Boolean  @default(false)
   createdAt    DateTime @default(now())
   lastSeenAt   DateTime @default(now())
+
+  // self-set demo flag standing in for a real Minecraft integration —
+  // each user flips their own, from their chat menu
+  minecraftOnline Boolean @default(false)
 
   // registration wizard progress
   idVerified         Boolean @default(false)
@@ -92,6 +97,7 @@ model Message {
   receiverId String?
   groupId    String?
   content    String
+  imageUrl   String? // data: URL of an attached image/gif
   createdAt  DateTime @default(now())
 
   sender   User        @relation("sender", fields: [senderId], references: [id])
