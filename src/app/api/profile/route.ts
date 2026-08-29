@@ -21,7 +21,13 @@ export async function PATCH(req: NextRequest) {
     }
     data.preferredName = preferredName || null;
   }
-  if (typeof body?.institution === "string") data.institution = body.institution.trim() || null;
+  if (typeof body?.institution === "string") {
+    const institution = body.institution.trim();
+    if (!institution) return NextResponse.json({ error: "Institution is required." }, { status: 400 });
+    data.institution = institution;
+  } else if (body?.institution === null) {
+    return NextResponse.json({ error: "Institution is required." }, { status: 400 });
+  }
   if (typeof body?.bio === "string") {
     const bio = body.bio.trim().slice(0, MAX_BIO_LENGTH);
     if (containsProfanity(bio)) {

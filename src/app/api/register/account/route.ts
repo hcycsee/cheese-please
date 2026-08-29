@@ -13,6 +13,7 @@ export async function POST(req: NextRequest) {
   const institution = typeof body?.institution === "string" ? body.institution.trim() : "";
 
   if (!name) return NextResponse.json({ error: "Name is required." }, { status: 400 });
+  if (!institution) return NextResponse.json({ error: "Institution is required." }, { status: 400 });
   if (containsProfanity(name) || containsProfanity(preferredName)) {
     return NextResponse.json({ error: "Please choose an appropriate name." }, { status: 400 });
   }

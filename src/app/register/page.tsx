@@ -134,12 +134,13 @@ export default function RegisterPage() {
               />
             </div>
             <div>
-              <label className="label">Institution (optional)</label>
+              <label className="label">Institution *</label>
               <input
                 className="input"
                 placeholder="e.g. University of Sydney"
                 value={institution}
                 onChange={(e) => setInstitution(e.target.value)}
+                required
               />
             </div>
             <button className="btn-primary" disabled={loading}>

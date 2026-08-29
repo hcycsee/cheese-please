@@ -98,8 +98,8 @@ function BasicInfoCard({ initial }: { initial: ProfileData }) {
           <input className="input" value={preferredName} onChange={(e) => setPreferredName(e.target.value)} />
         </div>
         <div>
-          <label className="label">Institution</label>
-          <input className="input" value={institution} onChange={(e) => setInstitution(e.target.value)} />
+          <label className="label">Institution *</label>
+          <input className="input" value={institution} onChange={(e) => setInstitution(e.target.value)} required />
         </div>
         <div>
           <label className="label">Gender *</label>
