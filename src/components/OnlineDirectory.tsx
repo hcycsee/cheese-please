@@ -9,6 +9,7 @@ export type DirectoryUser = {
   id: string;
   name: string;
   preferredName: string | null;
+  avatarUrl: string | null;
   gender: string | null;
   ageRange: string | null;
   faculty: string | null;
@@ -118,12 +119,24 @@ function UserCard({
   const games = gameNames(user);
   return (
     <div className={`card ${online ? "" : "opacity-60"}`}>
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className={`h-2.5 w-2.5 rounded-full ${online ? "bg-green-500" : "bg-stone-300"}`} />
-            <p className="font-semibold">{displayName(user)}</p>
+      <div className="flex items-start gap-3">
+        <div className="relative shrink-0">
+          <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-stone-200 bg-stone-100">
+            {user.avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <span className="text-lg">🙂</span>
+            )}
           </div>
+          <span
+            className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white ${
+              online ? "bg-green-500" : "bg-stone-300"
+            }`}
+          />
+        </div>
+        <div>
+          <p className="font-semibold">{displayName(user)}</p>
           <div className="mt-1 flex flex-wrap gap-1">
             {user.gender && <span className="chip">{user.gender}</span>}
             {user.ageRange && <span className="chip">{user.ageRange}</span>}

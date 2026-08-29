@@ -11,7 +11,11 @@ const LINKS = [
   { href: "/profile", label: "Profile" },
 ];
 
-export default function Navbar({ user }: { user: { name: string; preferredName?: string | null } }) {
+export default function Navbar({
+  user,
+}: {
+  user: { name: string; preferredName?: string | null; avatarUrl?: string | null };
+}) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -45,6 +49,10 @@ export default function Navbar({ user }: { user: { name: string; preferredName?:
         </div>
         <div className="flex items-center gap-3">
           <span className="hidden text-sm text-stone-500 sm:inline">Hi, {displayName(user)}</span>
+          {user.avatarUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={user.avatarUrl} alt="" className="h-8 w-8 rounded-full border border-stone-200 object-cover" />
+          )}
           <button onClick={logout} className="btn-ghost text-sm">
             Log out
           </button>

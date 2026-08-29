@@ -10,6 +10,7 @@ type FriendRow = {
     id: string;
     name: string;
     preferredName: string | null;
+    avatarUrl: string | null;
     gender: string | null;
     ageRange: string | null;
     faculty: string | null;
@@ -17,6 +18,28 @@ type FriendRow = {
     online: boolean;
   };
 };
+
+function Avatar({ user, showOnlineDot }: { user: FriendRow["user"]; showOnlineDot?: boolean }) {
+  return (
+    <div className="relative shrink-0">
+      <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-stone-200 bg-stone-100">
+        {user.avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <span className="text-lg">🙂</span>
+        )}
+      </div>
+      {showOnlineDot && (
+        <span
+          className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white ${
+            user.online ? "bg-green-500" : "bg-stone-300"
+          }`}
+        />
+      )}
+    </div>
+  );
+}
 
 function ProfileChips({ user }: { user: FriendRow["user"] }) {
   if (!user.gender && !user.ageRange && !user.faculty && !user.mbti) return null;
@@ -78,9 +101,12 @@ export default function FriendsPanel() {
           <div className="flex flex-col gap-2">
             {incoming.map((row) => (
               <div key={row.friendshipId} className="card flex items-center justify-between">
-                <div>
-                  <p className="font-medium">{displayName(row.user)}</p>
-                  <ProfileChips user={row.user} />
+                <div className="flex items-center gap-3">
+                  <Avatar user={row.user} />
+                  <div>
+                    <p className="font-medium">{displayName(row.user)}</p>
+                    <ProfileChips user={row.user} />
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <button className="btn-primary text-sm" onClick={() => respond(row.friendshipId, "accept")}>
@@ -106,8 +132,8 @@ export default function FriendsPanel() {
           <div className="flex flex-col gap-2">
             {friends.map((row) => (
               <div key={row.friendshipId} className="card flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className={`h-2.5 w-2.5 rounded-full ${row.user.online ? "bg-green-500" : "bg-stone-300"}`} />
+                <div className="flex items-center gap-3">
+                  <Avatar user={row.user} showOnlineDot />
                   <div>
                     <p className="font-medium">{displayName(row.user)}</p>
                     <ProfileChips user={row.user} />
@@ -133,9 +159,12 @@ export default function FriendsPanel() {
           <div className="flex flex-col gap-2">
             {outgoing.map((row) => (
               <div key={row.friendshipId} className="card flex items-center justify-between">
-                <div>
-                  <p className="font-medium">{displayName(row.user)}</p>
-                  <ProfileChips user={row.user} />
+                <div className="flex items-center gap-3">
+                  <Avatar user={row.user} />
+                  <div>
+                    <p className="font-medium">{displayName(row.user)}</p>
+                    <ProfileChips user={row.user} />
+                  </div>
                 </div>
                 <button className="btn-ghost text-sm" onClick={() => respond(row.friendshipId, "remove")}>
                   Cancel

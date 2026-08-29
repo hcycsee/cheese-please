@@ -2,16 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getCurrentUserId } from "@/lib/session";
 import { isOnline } from "@/lib/presence";
-import { ageRangeLabel } from "@/lib/format";
+import { visibleChips } from "@/lib/format";
 
 const PROFILE_FIELDS = {
   id: true,
   name: true,
   preferredName: true,
+  avatarUrl: true,
   gender: true,
   age: true,
   faculty: true,
   mbti: true,
+  showGender: true,
+  showAge: true,
+  showFaculty: true,
+  showMbti: true,
 } as const;
 
 export async function GET() {
@@ -30,8 +35,17 @@ export async function GET() {
 
   for (const f of friendships) {
     const isRequester = f.requesterId === userId;
-    const { age, ...other } = isRequester ? f.addressee : f.requester;
-    const row = { friendshipId: f.id, user: { ...other, ageRange: ageRangeLabel(age), online: isOnline(other.id) } };
+    const { gender, age, faculty, mbti, showGender, showAge, showFaculty, showMbti, ...other } = isRequester
+      ? f.addressee
+      : f.requester;
+    const row = {
+      friendshipId: f.id,
+      user: {
+        ...other,
+        ...visibleChips({ gender, age, faculty, mbti, showGender, showAge, showFaculty, showMbti }),
+        online: isOnline(other.id),
+      },
+    };
     if (f.status === "accepted") friends.push(row);
     else if (isRequester) outgoing.push(row);
     else incoming.push(row);

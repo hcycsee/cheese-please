@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import AppShell, { requireOnboardedUser } from "@/components/AppShell";
 import OnlineDirectory, { type DirectoryUser } from "@/components/OnlineDirectory";
-import { ageRangeLabel } from "@/lib/format";
+import { visibleChips } from "@/lib/format";
 
 export default async function DashboardPage() {
   const user = await requireOnboardedUser();
@@ -13,10 +13,15 @@ export default async function DashboardPage() {
         id: true,
         name: true,
         preferredName: true,
+        avatarUrl: true,
         gender: true,
         age: true,
         faculty: true,
         mbti: true,
+        showGender: true,
+        showAge: true,
+        showFaculty: true,
+        showMbti: true,
         ownedGames: true,
         steamGames: true,
       },
@@ -36,12 +41,14 @@ export default async function DashboardPage() {
     statusByUserId.set(otherId, { status, friendshipId: f.id });
   }
 
-  const directoryUsers: DirectoryUser[] = others.map(({ age, ...u }) => ({
-    ...u,
-    ageRange: ageRangeLabel(age),
-    friendStatus: statusByUserId.get(u.id)?.status ?? "none",
-    friendshipId: statusByUserId.get(u.id)?.friendshipId,
-  }));
+  const directoryUsers: DirectoryUser[] = others.map(
+    ({ gender, age, faculty, mbti, showGender, showAge, showFaculty, showMbti, ...u }) => ({
+      ...u,
+      ...visibleChips({ gender, age, faculty, mbti, showGender, showAge, showFaculty, showMbti }),
+      friendStatus: statusByUserId.get(u.id)?.status ?? "none",
+      friendshipId: statusByUserId.get(u.id)?.friendshipId,
+    })
+  );
 
   return (
     <AppShell user={user}>
