@@ -58,7 +58,7 @@ export default function GarticGame({
 
       {session.status === "lobby" && (
         <div className="flex flex-col gap-2">
-          <p className="text-xs text-stone-600">
+          <p className="break-words text-xs text-stone-600">
             Joined ({session.playerOrder.length}): {playerNames.join(", ") || "none yet"} — needs at least 3 to start.
           </p>
           <div className="flex gap-2">
@@ -89,7 +89,7 @@ export default function GarticGame({
             <div className="flex flex-col gap-2">
               {turn.previous === null && <p className="text-sm">Write a phrase to kick off a chain!</p>}
               {turn.previous && turn.previous.kind === "text" && (
-                <p className="text-sm">
+                <p className="break-words text-sm">
                   Draw this: <span className="font-semibold">&quot;{turn.previous.content}&quot;</span>
                 </p>
               )}
@@ -97,7 +97,7 @@ export default function GarticGame({
                 <div>
                   <p className="mb-1 text-sm">What is this?</p>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={turn.previous.content} alt="previous drawing" className="rounded-lg border border-stone-300" />
+                  <img src={turn.previous.content} alt="previous drawing" className="max-w-full rounded-lg border border-stone-300" />
                 </div>
               )}
 
@@ -135,13 +135,13 @@ export default function GarticGame({
               <p className="mb-2 text-xs font-semibold text-stone-500">Chain {i + 1}</p>
               <div className="flex flex-col gap-2">
                 {chain.map((entry, j) => (
-                  <div key={j} className="text-sm">
+                  <div key={j} className="break-words text-sm">
                     <span className="text-xs text-stone-400">{entry.authorName}: </span>
                     {entry.kind === "text" ? (
                       <span>{entry.content}</span>
                     ) : entry.content ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={entry.content} alt="" className="mt-1 max-w-xs rounded-lg border border-stone-300" />
+                      <img src={entry.content} alt="" className="mt-1 max-w-full rounded-lg border border-stone-300" />
                     ) : (
                       <span className="italic text-stone-400">(no drawing submitted)</span>
                     )}
