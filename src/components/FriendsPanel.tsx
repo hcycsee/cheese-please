@@ -17,8 +17,21 @@ type FriendRow = {
     faculty: string | null;
     mbti: string | null;
     online: boolean;
+    minecraftOnline: boolean;
   };
 };
+
+function MinecraftBadge({ online }: { online: boolean }) {
+  if (!online) return null;
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700"
+      title="Online in Minecraft"
+    >
+      🟩 Minecraft
+    </span>
+  );
+}
 
 function Avatar({ user, showOnlineDot }: { user: FriendRow["user"]; showOnlineDot?: boolean }) {
   return (
@@ -169,7 +182,10 @@ export default function FriendsPanel() {
                 <div className="flex items-center gap-3">
                   <Avatar user={row.user} showOnlineDot />
                   <div>
-                    <p className="font-medium">{displayName(row.user)}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium">{displayName(row.user)}</p>
+                      <MinecraftBadge online={row.user.minecraftOnline} />
+                    </div>
                     <ProfileChips user={row.user} />
                   </div>
                 </div>

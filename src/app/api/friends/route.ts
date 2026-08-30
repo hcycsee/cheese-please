@@ -18,6 +18,7 @@ const PROFILE_FIELDS = {
   showAge: true,
   showFaculty: true,
   showMbti: true,
+  minecraftOnline: true,
 } as const;
 
 export async function GET() {

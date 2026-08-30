@@ -27,6 +27,7 @@ export default function ChatWindow({
   initialMessages,
   title,
   subtitle,
+  otherMembers,
 }: {
   mode: "dm" | "group";
   targetId: string;
@@ -34,6 +35,7 @@ export default function ChatWindow({
   initialMessages: ChatMessage[];
   title: string;
   subtitle?: string;
+  otherMembers?: { id: string; name: string }[];
 }) {
   const [messages, setMessages] = useState(initialMessages);
   const [draft, setDraft] = useState("");
@@ -41,9 +43,32 @@ export default function ChatWindow({
   const [imageError, setImageError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [minecraftOnlineNames, setMinecraftOnlineNames] = useState<string[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    if (!otherMembers || otherMembers.length === 0) {
+      setMinecraftOnlineNames([]);
+      return;
+    }
+    let cancelled = false;
+    Promise.all(
+      otherMembers.map((m) =>
+        fetch(`/api/minecraft/status?userId=${m.id}`)
+          .then((res) => (res.ok ? res.json() : { online: false }))
+          .then((data) => ({ name: m.name, online: !!data.online }))
+          .catch(() => ({ name: m.name, online: false })),
+      ),
+    ).then((results) => {
+      if (!cancelled) setMinecraftOnlineNames(results.filter((r) => r.online).map((r) => r.name));
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [otherMembers?.map((m) => m.id).join(",")]);
 
   async function blockUser() {
     if (!window.confirm("Block this person? They'll disappear from your directory and won't be able to message or add you.")) {
@@ -124,8 +149,23 @@ export default function ChatWindow({
     <div className="card flex h-[70vh] flex-col p-0">
       <div className="flex items-center justify-between border-b border-stone-200 px-5 py-3">
         <div>
-          <p className="font-semibold">{title}</p>
+          <div className="flex items-center gap-2">
+            <p className="font-semibold">{title}</p>
+            {mode === "dm" && minecraftOnlineNames.length > 0 && (
+              <span
+                className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700"
+                title="Online in Minecraft"
+              >
+                🟩 Minecraft
+              </span>
+            )}
+          </div>
           {subtitle && <p className="text-xs text-stone-500">{subtitle}</p>}
+          {mode === "group" && minecraftOnlineNames.length > 0 && (
+            <p className="text-xs text-green-700" title="Online in Minecraft">
+              🟩 Online in Minecraft: {minecraftOnlineNames.join(", ")}
+            </p>
+          )}
         </div>
         <div className="relative">
           <button

@@ -39,6 +39,7 @@ export default async function DirectChatPage({ params }: { params: { friendId: s
         targetId={friend.id}
         currentUserId={user.id}
         title={displayName(friend)}
+        otherMembers={[{ id: friend.id, name: displayName(friend) }]}
         initialMessages={messages.map((m) => ({ ...m, createdAt: m.createdAt.toISOString() }))}
       />
     </AppShell>

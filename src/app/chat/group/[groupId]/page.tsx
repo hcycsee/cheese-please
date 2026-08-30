@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import AppShell, { requireOnboardedUser } from "@/components/AppShell";
 import ChatWindow from "@/components/ChatWindow";
+import { displayName } from "@/lib/format";
 
 export default async function GroupChatPage({ params }: { params: { groupId: string } }) {
   const user = await requireOnboardedUser();
@@ -28,6 +29,10 @@ export default async function GroupChatPage({ params }: { params: { groupId: str
     .map((m) => m.user.preferredName || m.user.name)
     .join(", ");
 
+  const otherMembers = group.members
+    .filter((m) => m.user.id !== user.id)
+    .map((m) => ({ id: m.user.id, name: displayName(m.user) }));
+
   return (
     <AppShell user={user}>
       <ChatWindow
@@ -36,6 +41,7 @@ export default async function GroupChatPage({ params }: { params: { groupId: str
         currentUserId={user.id}
         title={group.name}
         subtitle={`${group.summary ?? ""} · ${group.members.length} members: ${memberNames}`}
+        otherMembers={otherMembers}
         initialMessages={messages.map((m) => ({ ...m, createdAt: m.createdAt.toISOString() }))}
       />
     </AppShell>
