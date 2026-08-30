@@ -8,7 +8,7 @@ import { SESSION_COOKIE, verifySessionToken } from "./src/lib/auth";
 import { markSocketOnline, markSocketOffline, listOnlineUserIds } from "./src/lib/presence";
 import { setIo } from "./src/lib/socketServer";
 import { displayName } from "./src/lib/format";
-import { gameRoomKey, getSession as getBaseSession, type GameMode, type GameType, type BaseSession } from "./src/lib/games/shared";
+import { gameRoomKey, getSession as getBaseSession, clearSession, type GameMode, type GameType, type BaseSession } from "./src/lib/games/shared";
 import * as TileRush from "./src/lib/games/tileRush";
 import * as TicTacToe from "./src/lib/games/tictactoe";
 import * as Gartic from "./src/lib/games/gartic";
@@ -279,6 +279,24 @@ app.prepare().then(() => {
         else socket.emit("game:error", { message: "Couldn't join — the game may be full or already started." });
       } catch {
         socket.emit("game:error", { message: "Failed to join the game." });
+      }
+    });
+
+    socket.on("game:leave", async (payload: { mode?: GameMode; targetId?: string }) => {
+      try {
+        const { mode, targetId } = payload ?? {};
+        if (!mode || !targetId) return;
+        if (!(await canPlayIn(userId, mode, targetId))) return;
+
+        const key = gameRoomKey(userId, mode, targetId);
+        const existing = getBaseSession(key);
+        if (!existing) return;
+
+        clearSession(key);
+        const rooms = gameRooms(userId, mode, targetId);
+        broadcastState(rooms, key, null);
+      } catch {
+        socket.emit("game:error", { message: "Failed to leave the game." });
       }
     });
 

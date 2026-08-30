@@ -36,6 +36,11 @@ export function setSession(key: string, session: BaseSession): void {
   sessions.set(key, session);
 }
 
+export function clearSession(key: string): void {
+  sessions.delete(key);
+  clearTimer(key);
+}
+
 export function clearTimer(key: string): void {
   const t = timers.get(key);
   if (t) {
