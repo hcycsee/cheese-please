@@ -57,7 +57,7 @@ export default function NotificationToasts({ currentUserId }: { currentUserId: s
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-20 right-4 z-40 flex w-72 max-w-[calc(100vw-2rem)] flex-col gap-2">
+    <div className="fixed bottom-4 left-4 z-40 flex w-72 max-w-[calc(100vw-2rem)] flex-col gap-2">
       {toasts.map((toast) => (
         <button
           key={toast.id}
